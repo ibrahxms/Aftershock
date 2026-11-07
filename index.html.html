@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Aftershock – live earthquake radar</title>
+<meta name="description" content="Live earthquake map and 3D globe with real USGS and EMSC data and world time zones.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='4' fill='%23ff5c7a'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%237fd4ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%237fd4ff' stroke-opacity='.45' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* Leaflet core styles, inlined so the map still works if the external stylesheet is blocked */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;-webkit-tap-highlight-color:transparent}
+.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+.leaflet-tile{filter:inherit;visibility:hidden}.leaflet-tile-loaded{visibility:inherit}
+.leaflet-zoom-box{width:0;height:0;box-sizing:border-box;z-index:800}
+.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-shadow-pane{z-index:500}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}
+.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
+.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-tile-pane img,.leaflet-container img.leaflet-tile{max-width:none!important;max-height:none!important;width:auto;padding:0}
+.leaflet-touch-zoom{touch-action:pan-x pan-y}.leaflet-touch-drag{touch-action:pinch-zoom}.leaflet-touch-drag.leaflet-touch-zoom{touch-action:none}
+.leaflet-grab{cursor:grab}.leaflet-dragging .leaflet-grab{cursor:move}.leaflet-interactive{cursor:pointer}
+.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
+.leaflet-marker-icon.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive{pointer-events:auto}
+.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}
+.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
+.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both}.leaflet-right .leaflet-control{float:right}
+.leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px}
+.leaflet-bar{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(12px)}
+.leaflet-bar a{display:block;width:34px;height:34px;line-height:34px;text-align:center;text-decoration:none;color:var(--tx);font-size:18px}
+.leaflet-bar a+a{border-top:1px solid var(--line)}.leaflet-bar a:hover{background:rgba(127,212,255,.15)}
+.leaflet-control-attribution{background:rgba(5,10,19,.6);color:var(--mu);font-size:11px;padding:0 6px;margin:0}.leaflet-control-attribution a{color:var(--mu)}
+.leaflet-tooltip{position:absolute;padding:6px 8px;border-radius:8px;white-space:nowrap;user-select:none;pointer-events:none}
+.leaflet-tooltip-top:before{content:"";position:absolute;pointer-events:none;border:6px solid transparent;bottom:0;margin-bottom:-12px;left:50%;margin-left:-6px}
+.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}
+.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:12px}.leaflet-popup-content{margin:12px 16px;line-height:1.4;min-height:1px}
+.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin:-1px 0 0 -20px;overflow:hidden;pointer-events:none}
+.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;pointer-events:auto;transform:rotate(45deg)}
+:root{--L:356px;--R:336px;--panel:rgba(10,18,32,.76);--line:rgba(140,180,230,.16);--tx:#e9f0fa;--mu:#8497b3;--ac:#7fd4ff;color-scheme:dark;font-family:'Sora',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;color:var(--tx);background:radial-gradient(ellipse at 55% 45%,#0d1c32,#050a13 72%)}
+canvas{position:fixed;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+canvas:active{cursor:grabbing}
+.panel,.card{position:fixed;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px}
+.panel{left:16px;top:16px;bottom:16px;width:340px;display:flex;flex-direction:column;overflow:hidden;animation:in .9s .3s cubic-bezier(.2,.8,.2,1) backwards;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
+@keyframes in{from{opacity:0;transform:translateX(-24px)}}
+header{padding:18px 18px 10px}
+h1{font-size:22px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.dot{width:9px;height:9px;border-radius:50%;background:#4ade80;animation:ping 2s infinite}
+.dot.demo{background:#ffd166;animation:none}
+@keyframes ping{0%{box-shadow:0 0 0 0 #4ade80aa}70%,100%{box-shadow:0 0 0 9px #4ade8000}}
+.src{font-size:12px;color:var(--mu);margin-top:5px;line-height:1.4}
+.tabs{display:flex;gap:6px;margin-top:14px}
+button{font:inherit;color:inherit;cursor:pointer}
+.tabs button{flex:1;padding:8px 0;border-radius:10px;border:1px solid var(--line);background:transparent;font-size:13px;transition:.2s}
+.tabs button.on{background:var(--ac);color:#04121f;border-color:var(--ac);font-weight:600}
+.rng{display:block;margin-top:12px;font-size:12px;color:var(--mu)}
+.rng b{color:var(--tx);float:right}
+input[type=range]{width:100%;accent-color:var(--ac);margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stats div{background:rgba(255,255,255,.04);border-radius:12px;padding:9px 10px}
+.stats b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.stats span{font-size:11px;color:var(--mu)}
+#list{list-style:none;padding:6px 8px 10px;overflow-y:auto;flex:1;border-top:1px solid var(--line)}
+#list button{width:100%;display:grid;grid-template-columns:46px 1fr;gap:12px;align-items:center;text-align:left;padding:9px 10px;border:0;border-radius:12px;background:transparent;transition:background .15s}
+#list button:hover,#list button.on{background:rgba(127,212,255,.1)}
+.b{height:40px;border-radius:11px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#07101c;font-variant-numeric:tabular-nums}
+.t{font-size:13px;line-height:1.3;font-weight:600}.m{font-size:11.5px;color:var(--mu);margin-top:2px}
+.empty{padding:24px 12px;color:var(--mu);font-size:13px}
+.card{right:16px;top:16px;width:320px;padding:20px;transform:translateX(30px);opacity:0;pointer-events:none;transition:.45s cubic-bezier(.2,.8,.2,1)}
+.card.open{transform:none;opacity:1;pointer-events:auto}
+.x{position:absolute;right:12px;top:10px;border:0;background:none;font-size:24px;color:var(--mu)}
+.big{font-size:58px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.big small{font-size:13px;font-weight:600;color:var(--mu);margin-left:8px;letter-spacing:0}
+h2{font-size:19px;margin-top:10px;line-height:1.25}
+.mu{color:var(--mu);font-size:13px;margin-top:3px}
+dl{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;margin:18px 0}
+dt{font-size:11px;color:var(--mu)}dd{font-size:14px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.full{grid-column:1/-1}
+.acts{display:flex;gap:8px}
+.acts button,.acts a{flex:1;text-align:center;padding:10px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:13px;color:var(--tx);text-decoration:none}
+.acts button:hover,.acts a:hover{border-color:var(--ac)}
+#hud{position:fixed;left:50%;bottom:18px;transform:translateX(calc(-50% + (var(--L) - var(--R)) / 2));font-size:12px;color:var(--mu);display:flex;gap:16px;align-items:center;white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none}
+.lg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+#map{position:fixed;inset:0;z-index:0;background:#07121f}
+.leaflet-container{font-family:inherit}
+.panel,.card,.seg{z-index:10}#hud{z-index:5}
+.seg{position:fixed;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:4px;padding:4px;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:14px}
+.seg button{border:0;background:transparent;padding:8px 16px;border-radius:10px;font-size:13px;transition:.2s}
+.seg button.on{background:var(--ac);color:#04121f;font-weight:600}
+.seg #mb{border-left:1px solid var(--line);border-radius:10px;margin-left:2px}
+.qd{border-radius:50%;background:var(--c);border:1.5px solid rgba(255,255,255,.6);opacity:.82;transform:scale(var(--zs,1));position:relative}.qd.p{opacity:1;box-shadow:0 0 12px var(--c)}
+.qd.pp::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--c);animation:pr 2.2s ease-out infinite}
+.qd.s{outline:3px solid #fff;outline-offset:3px}
+@keyframes pr{from{opacity:.85}to{transform:scale(3.6);opacity:0}}
+.leaflet-tooltip,.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:rgba(10,18,32,.94);color:var(--tx);border:1px solid var(--line);box-shadow:none;font-size:12px}
+.leaflet-tooltip-top:before{border-top-color:rgba(10,18,32,.94)}
+.card{max-height:calc(100vh - 32px);overflow-y:auto}
+.card .tabs{margin:14px 0 4px}
+.lk{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.lk a{font-size:12px;padding:7px 11px;border:1px solid var(--line);border-radius:999px;color:var(--tx);text-decoration:none}
+.lk a:hover{border-color:var(--ac)}
+.sm{width:100%;border-radius:12px;margin-top:8px;background:#fff}
+h3{font-size:13px;margin-top:18px}
+ul.nc{list-style:none;padding:0;font-size:13px;margin-top:6px}
+ul.nc li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.fold{position:fixed;z-index:11;top:30px;left:310px;width:32px;height:32px;display:grid;place-items:center;padding:0;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.06);transition:left .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),width .45s,height .45s,background .3s}
+.fold:hover{border-color:var(--ac)}
+.fold svg{transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+body.mfold .panel{transform:translateX(calc(-100% - 24px));visibility:hidden;pointer-events:none;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s}
+body.mfold .fold{left:16px;top:16px;width:44px;height:44px;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+body.mfold .fold svg{transform:rotate(180deg)}
+#hud{transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.seg{transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+#lbl{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.lb{position:absolute;left:0;top:0;white-space:nowrap;font-size:11px;color:#e9f0fa;text-shadow:0 0 4px #04101e,0 0 9px #04101e}
+.lb.c{font-weight:600;text-transform:uppercase;font-size:9.5px;letter-spacing:.12em;color:#8fb4d9}
+.lb.t::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:#e9f0fa;margin-right:5px;vertical-align:middle}
+.lb.o{font-style:italic;font-size:12px;letter-spacing:.32em;color:#4f7aa3;text-transform:uppercase}
+.leaflet-marker-icon.lb::before{display:none}.lbt{position:absolute;transform:translate(-50%,-50%);white-space:nowrap}
+#map[data-z=lo] .lb.t{display:none}#map[data-z=hi] .lb.o{display:none}
+#fx{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0;box-shadow:inset 0 0 160px 40px var(--fc,#ff3d6e)}
+.toast{position:fixed;top:72px;left:50%;transform:translate(-50%,-16px);z-index:12;opacity:0;pointer-events:none;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 32px);padding:10px 14px;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer;transition:.35s}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}.toast b{padding:3px 8px;border-radius:8px;color:#07101c}
+.wv{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:50%;border:3px solid #ff5c5c;opacity:0;animation:wv 2.2s ease-out forwards}
+@keyframes wv{0%{transform:scale(.2);opacity:.95}100%{transform:scale(9);opacity:0}}
+.ctl{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--mu)}
+.ctl select{background:rgba(255,255,255,.06);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font:inherit}
+.ctl button{padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:12px}
+.co{display:block;user-select:all;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:rgba(255,255,255,.05);border-radius:8px;padding:8px 10px;margin-top:12px}
+.lb.s{font-size:10px;letter-spacing:.06em;color:#8fb0cf}
+#map[data-z=lo] .lb.s{display:none}
+body[data-st=light] .lb{color:#12263f;text-shadow:0 0 3px #fff,0 0 7px #fff}body[data-st=light] .lb.c{color:#35597f}body[data-st=light] .lb.o{color:#6b8fb3}body[data-st=light] .lb.s{color:#5b7fa3}body[data-st=light] .lb.t::before{background:#12263f}
+.seg{max-width:calc(100vw - 16px);overflow-x:auto}
+.seg select{background:transparent;color:var(--tx);border:0;border-left:1px solid var(--line);padding:8px 10px;font:inherit;font-size:13px;border-radius:10px;cursor:pointer}
+.seg select option{background:#0b1524}
+.bn{position:fixed;z-index:9;left:50%;bottom:52px;transform:translateX(calc(-50% + (var(--L) - var(--R)) / 2));width:min(480px,calc(100vw - 420px));display:none;gap:10px;align-items:flex-start;padding:11px 14px;background:rgba(48,33,6,.9);border:1px solid #7a5f14;color:#ffe2a0;border-radius:12px;font-size:12.5px;line-height:1.45;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.bn.on{display:flex}.bn button{border:0;background:none;color:inherit;font-size:20px;line-height:1;padding:0 2px}
+
+#bgc{position:fixed;inset:0;z-index:-1;display:grid;place-items:center;pointer-events:none;user-select:none;overflow:hidden}
+#bgc::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(127,212,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(127,212,255,.05) 1px,transparent 1px);background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%)}
+#bgc i{position:absolute;border-radius:50%;border:1px dashed rgba(127,212,255,.13);width:min(96vh,96vw);aspect-ratio:1;animation:spin 90s linear infinite}
+#bgc i+i{width:min(68vh,68vw);animation-duration:60s;animation-direction:reverse;border-style:dotted}
+#bgc u{position:absolute;width:min(96vh,96vw);aspect-ratio:1;border-radius:50%;background:conic-gradient(from 0deg,rgba(127,212,255,0) 0deg,rgba(127,212,255,.1) 55deg,rgba(127,212,255,0) 56deg);animation:spin 9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#bgt{position:relative;font-size:min(17vw,240px);font-weight:800;letter-spacing:-.04em;line-height:1;color:rgba(127,212,255,.075);font-variant-numeric:tabular-nums}
+#bgd{position:relative;margin-top:10px;font-size:min(2vw,24px);letter-spacing:.5em;text-transform:uppercase;color:rgba(127,212,255,.16)}
+.dock{position:fixed;z-index:10;top:16px;right:16px;width:320px;padding:14px 16px 10px;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;animation:inr .9s .5s cubic-bezier(.2,.8,.2,1) backwards;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
+@keyframes inr{from{opacity:0;transform:translateX(24px)}}
+.dk1 b{display:block;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.dk1 span,.dk2{font-size:12px;color:var(--mu)}
+.dk2{display:flex;justify-content:space-between;margin-top:3px;font-variant-numeric:tabular-nums}
+.wc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.wc div{background:rgba(255,255,255,.04);border-radius:10px;padding:6px 8px}.wc small{display:block;font-size:10px;color:var(--mu);white-space:nowrap}.wc b{font-size:14px;font-variant-numeric:tabular-nums}
+#sz{display:block;width:100%;height:32px;margin-top:8px}
+.dock .zc{font-size:10px;color:var(--mu);margin-top:2px}
+.card{top:180px;max-height:calc(100vh - 196px)}
+body.mfold{--L:0px}body.rhide{--R:0px}
+.zones{position:fixed;z-index:10;top:180px;bottom:16px;right:16px;width:320px;display:flex;flex-direction:column;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;overflow:hidden;animation:inr .9s .6s cubic-bezier(.2,.8,.2,1) backwards;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.zones h4{display:flex;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);padding:14px 16px 8px}
+#zl{list-style:none;padding:0 8px 6px;overflow-y:auto;flex:1;position:relative}
+#zl li{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:7px 8px;border-radius:10px;font-size:13px;line-height:1.2}
+#zl li small{display:block;font-size:10.5px;color:var(--mu);margin-top:2px}
+#zl li b{font-size:14px;font-variant-numeric:tabular-nums}
+#zl li.me{background:rgba(127,212,255,.12)}#zl li em{font-style:normal;font-size:10px;color:#04121f;background:var(--ac);border-radius:6px;padding:1px 5px;margin-left:4px}
+.dy{width:8px;height:8px;border-radius:50%;background:#ffd166;box-shadow:0 0 6px #ffd16688}.dy.n{background:#3a4f7a;box-shadow:none}
+.zf{padding:8px 16px 12px;font-size:10.5px;color:var(--mu);border-top:1px solid var(--line)}
+.rf{position:fixed;z-index:11;top:24px;right:24px;width:32px;height:32px;display:grid;place-items:center;padding:0;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.06);transition:right .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),width .45s,height .45s,background .3s}
+.rf:hover{border-color:var(--ac)}.rf svg{transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+body.rhide .dock,body.rhide .zones{transform:translateX(calc(100% + 24px));visibility:hidden;pointer-events:none;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s}
+body.rhide .rf{right:16px;top:16px;width:44px;height:44px;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+body.rhide .rf svg{transform:rotate(180deg)}
+body.rhide .card{top:16px;max-height:calc(100vh - 32px)}
+@media(min-width:1500px){.card{right:352px;top:16px;max-height:calc(100vh - 32px)}body.rhide .card{right:16px}}
+.leaflet-bottom.leaflet-right{transition:right .45s cubic-bezier(.2,.8,.2,1)}body:not(.rhide) .leaflet-bottom.leaflet-right{right:352px}
+.me{padding:10px 14px 12px;border-top:1px solid var(--line)}
+.me .mn{font-size:12px;color:var(--mu)}.me .mn b{color:var(--tx)}
+.me .mk{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.me .mk a{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--tx);text-decoration:none;font-size:12px;background:rgba(255,255,255,.04);cursor:pointer}
+.me .mk a:hover{border-color:var(--ac)}.me .mk a.cf{background:#ffdd00;border-color:#ffdd00;color:#1b1b1b;font-weight:600}
+.me p{font-size:10px;color:var(--mu);margin-top:8px;line-height:1.4}
+.me .mk .cfb{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:0;font-size:12px;font-weight:700;color:#08121f;background:linear-gradient(135deg,#7fd4ff,#b69cff);cursor:pointer;transition:transform .15s}
+.me .mk .cfb:hover{transform:translateY(-1px)}
+.dn{position:fixed;z-index:40;width:320px;max-width:calc(100vw - 16px);padding:14px;background:rgba(10,18,32,.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.55);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility 0s .2s}
+.dn.on{opacity:1;visibility:visible;transform:none;transition:opacity .2s,transform .2s}
+.dn h5{font-size:13px;font-weight:600;margin:0 0 10px}.dn .sub{font-size:11.5px;color:var(--mu);margin:-6px 0 10px}
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dg button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 8px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:11px;transition:.15s}
+.dg button:hover{border-color:var(--ac);background:rgba(127,212,255,.1);transform:translateY(-1px)}
+.dg i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:10px}
+.dd .ad{display:block;word-break:break-all;user-select:all;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;background:rgba(255,255,255,.06);border-radius:10px;padding:10px;margin:10px 0}
+.dd .qr{width:fit-content;margin:12px auto 0;background:#fff;border-radius:12px;padding:10px;line-height:0}
+.dd .wn{font-size:11px;color:#ffd08a;margin-top:10px;line-height:1.45}
+.lg{position:relative;display:inline-grid;place-items:center;border-radius:50%;background:var(--c);flex:none}
+.lg b{font-size:9px;font-weight:800;color:var(--t)}
+.lg img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%}
+.hh{display:flex;align-items:center;gap:10px}
+.dd .bk{border:0;background:none;color:var(--ac);font-size:12px;padding:0;margin-bottom:8px}
+.me p.ds{margin-top:6px;color:#9fb3cf}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+@media(max-width:760px){
+ .panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:40vh}
+ header{padding:12px 14px 6px}.stats,.rng{display:none}.tabs{margin-top:10px}
+ .card{left:8px;right:8px;top:8px;width:auto;padding:16px}.big{font-size:44px}dl{margin:12px 0}
+ #hud{display:none}.me p:not(.ds){display:none}.dock,.zones,.rf{display:none}body .leaflet-bottom.leaflet-right{right:0!important}.card{max-height:calc(60vh - 16px)}.bn,body.mfold .bn{bottom:calc(40vh + 62px);width:calc(100vw - 24px);transform:translateX(-50%)}.seg{top:auto;bottom:calc(40vh + 16px)}.seg button,.seg select{padding:7px 9px;font-size:12px}
+ .fold{top:auto;left:auto;right:16px;bottom:calc(40vh - 36px)}.fold svg{transform:rotate(-90deg)}
+ body.mfold .panel{transform:translateY(calc(100% + 16px))}
+ body.mfold .fold{top:auto;left:auto;right:8px;bottom:8px}body.mfold .fold svg{transform:rotate(90deg)}body.mfold .seg{bottom:64px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="bgc" aria-hidden="true"><u></u><i></i><i></i><div id="bgt"></div><div id="bgd"></div></div>
+<div id="map"></div>
+<canvas id="c"></canvas>
+<div id="lbl"></div>
+<button class="fold" id="fold" aria-label="Hide menu" aria-expanded="true" title="Show or hide the menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+<aside class="panel">
+ <header>
+  <h1><span class="dot" id="dot"></span>Aftershock</h1>
+  <p class="src" id="src">Connecting to USGS…</p>
+  <div class="tabs" id="tabs"><button data-f="hour">Past hour</button><button data-f="day" class="on">Past day</button></div>
+  <div class="ctl"><label>Data source <select id="src2"><option value="auto">Auto: USGS, then EMSC</option><option value="usgs">USGS only</option><option value="emsc">EMSC only</option></select></label></div>
+  <div class="ctl"><label>Shake alerts <select id="shk"><option value="2.5">M2.5+</option><option value="4.5">M4.5+</option><option value="99">Off</option></select></label><button id="sim">Test shake</button></div>
+  <label class="rng">Minimum magnitude <b id="mv">0</b><input id="mag" type="range" min="0" max="7" step=".5" value="0"></label>
+  <div class="stats"><div><b id="s1">–</b><span>quakes</span></div><div><b id="s2">–</b><span>strongest</span></div><div><b id="s3">–</b><span>latest</span></div></div>
+ </header>
+ <ul id="list"></ul>
+ <footer class="me"><div class="mn">Made by <b>ibrahxm</b></div><div class="mk"><a id="lk-gh" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a><a id="lk-gl" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>guns.lol</a><button id="dbtn" class="cfb" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3h4"/></svg>Donate me crypto!</button></div><p>Data: USGS · EMSC · Esri · Logos: cryptocurrency-icons</p><p class="ds">Aftershock is not an early-warning or safety system. Data comes from public sources and can be delayed, revised or wrong. For official alerts use the USGS Earthquake Notification Service or your local emergency alerts. Not affiliated with USGS or EMSC.</p></footer>
+</aside>
+<div class="bn" id="bn" role="status"><span id="bnt"></span><button id="bnx" aria-label="Dismiss">×</button></div>
+<div id="fx"></div><div class="toast" id="toast" role="status"></div>
+<div class="dn" id="dn" role="dialog" aria-label="Donate crypto"></div>
+<div class="seg" id="seg"><button data-v="map" class="on">Map</button><button data-v="globe">Globe</button><select id="sty" aria-label="Map style"><option value="dark">Dark</option><option value="color">Colorful</option><option value="light">Light</option><option value="sat">Satellite</option></select></div>
+<button class="rf" id="rf" aria-label="Hide clock and time zones" title="Hide clock and time zones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+<aside class="zones" id="zones" aria-label="World time zones"><h4><span>All time zones</span><span id="zc2"></span></h4><ul id="zl"></ul><div class="zf">One city for every UTC offset. A yellow dot means it is daytime there.</div></aside>
+<aside class="dock" id="dock" aria-label="Clock and activity"><div class="dk1"><b id="ck">--:--:--</b><span id="cd"></span></div><div class="dk2"><span id="cu">--:--:-- UTC</span><span id="ctz"></span></div><canvas id="sz" width="640" height="64"></canvas><div class="zc">Activity trace · spikes when a new quake arrives</div></aside>
+<section class="card" id="card" aria-live="polite"></section>
+<div id="hud"><span id="cur">Drag to pan · scroll to zoom · click a dot</span>
+ <span class="lg"><i style="background:#5eead4"></i>&lt;3 <i style="background:#ffd166;margin-left:8px"></i>3–4.5 <i style="background:#ff7a45;margin-left:8px"></i>4.5–6 <i style="background:#ff3d6e;margin-left:8px"></i>6+</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ====== YOUR LINKS AND DONATION ADDRESSES (edit here) ======
+const LINKS={github:'https://github.com/ibrahxms',guns:'https://guns.lol/ibrahxm'};
+const EVM='0x54b7ab689066e2DAA205d2Ec2c5b731403bc3A78';
+// QR codes are pre-built from the addresses below (each one was decoded back to confirm it matches)
+const QRS={"0x54b7ab689066e2DAA205d2Ec2c5b731403bc3A78":{"n":29,"d":"M0 0h7v1h-7zM8 0h1v1h-1zM10 0h1v1h-1zM12 0h3v1h-3zM17 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h1v1h-1zM14 1h1v1h-1zM16 1h1v1h-1zM19 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM11 2h3v1h-3zM16 2h1v1h-1zM18 2h3v1h-3zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h1v1h-1zM13 3h1v1h-1zM17 3h2v1h-2zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM11 4h1v1h-1zM14 4h1v1h-1zM17 4h1v1h-1zM19 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM11 5h3v1h-3zM16 5h1v1h-1zM18 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h1v1h-1zM12 7h2v1h-2zM18 7h3v1h-3zM0 8h1v1h-1zM3 8h6v1h-6zM12 8h1v1h-1zM15 8h1v1h-1zM19 8h3v1h-3zM24 8h1v1h-1zM26 8h3v1h-3zM0 9h3v1h-3zM5 9h1v1h-1zM7 9h2v1h-2zM15 9h2v1h-2zM18 9h4v1h-4zM24 9h4v1h-4zM0 10h1v1h-1zM2 10h2v1h-2zM6 10h1v1h-1zM8 10h2v1h-2zM11 10h5v1h-5zM17 10h1v1h-1zM20 10h1v1h-1zM23 10h2v1h-2zM26 10h2v1h-2zM0 11h1v1h-1zM2 11h4v1h-4zM9 11h3v1h-3zM14 11h1v1h-1zM17 11h1v1h-1zM19 11h1v1h-1zM23 11h3v1h-3zM27 11h2v1h-2zM0 12h2v1h-2zM3 12h2v1h-2zM6 12h2v1h-2zM12 12h2v1h-2zM15 12h1v1h-1zM19 12h1v1h-1zM21 12h2v1h-2zM25 12h1v1h-1zM28 12h1v1h-1zM0 13h1v1h-1zM3 13h3v1h-3zM10 13h1v1h-1zM12 13h4v1h-4zM18 13h1v1h-1zM20 13h3v1h-3zM24 13h5v1h-5zM0 14h2v1h-2zM3 14h1v1h-1zM6 14h1v1h-1zM9 14h2v1h-2zM13 14h1v1h-1zM15 14h1v1h-1zM17 14h4v1h-4zM22 14h7v1h-7zM0 15h2v1h-2zM3 15h1v1h-1zM12 15h1v1h-1zM16 15h1v1h-1zM20 15h1v1h-1zM26 15h1v1h-1zM28 15h1v1h-1zM5 16h2v1h-2zM8 16h1v1h-1zM10 16h1v1h-1zM13 16h4v1h-4zM18 16h1v1h-1zM20 16h1v1h-1zM25 16h1v1h-1zM27 16h2v1h-2zM0 17h1v1h-1zM2 17h2v1h-2zM8 17h1v1h-1zM10 17h2v1h-2zM14 17h4v1h-4zM20 17h1v1h-1zM23 17h3v1h-3zM27 17h1v1h-1zM0 18h2v1h-2zM3 18h7v1h-7zM11 18h2v1h-2zM15 18h1v1h-1zM18 18h2v1h-2zM22 18h3v1h-3zM28 18h1v1h-1zM0 19h3v1h-3zM5 19h1v1h-1zM8 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM18 19h4v1h-4zM26 19h1v1h-1zM0 20h2v1h-2zM4 20h1v1h-1zM6 20h2v1h-2zM9 20h1v1h-1zM11 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM19 20h10v1h-10zM8 21h1v1h-1zM13 21h1v1h-1zM15 21h2v1h-2zM18 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM26 21h2v1h-2zM0 22h7v1h-7zM8 22h2v1h-2zM14 22h3v1h-3zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h4v1h-4zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h2v1h-2zM11 23h2v1h-2zM15 23h1v1h-1zM17 23h1v1h-1zM19 23h2v1h-2zM24 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h2v1h-2zM12 24h4v1h-4zM18 24h8v1h-8zM27 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h2v1h-2zM11 25h5v1h-5zM19 25h2v1h-2zM23 25h1v1h-1zM25 25h2v1h-2zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM9 26h5v1h-5zM15 26h2v1h-2zM24 26h5v1h-5zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h2v1h-2zM13 27h4v1h-4zM20 27h1v1h-1zM22 27h1v1h-1zM26 27h1v1h-1zM28 27h1v1h-1zM0 28h7v1h-7zM8 28h1v1h-1zM15 28h1v1h-1zM19 28h4v1h-4zM24 28h2v1h-2z"},"bc1q9z2ffe3f4vakxn2t8hyhh7fzv6f62akgtmaxxv":{"n":29,"d":"M0 0h7v1h-7zM8 0h2v1h-2zM14 0h1v1h-1zM16 0h2v1h-2zM19 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h2v1h-2zM16 1h2v1h-2zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM10 2h1v1h-1zM12 2h2v1h-2zM15 2h1v1h-1zM18 2h2v1h-2zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM11 3h5v1h-5zM17 3h1v1h-1zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM10 4h1v1h-1zM13 4h4v1h-4zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM11 5h1v1h-1zM13 5h2v1h-2zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h1v1h-1zM10 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM2 8h2v1h-2zM5 8h3v1h-3zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h5v1h-5zM20 8h1v1h-1zM22 8h1v1h-1zM25 8h1v1h-1zM27 8h2v1h-2zM0 9h1v1h-1zM2 9h1v1h-1zM5 9h1v1h-1zM7 9h3v1h-3zM11 9h2v1h-2zM16 9h4v1h-4zM22 9h1v1h-1zM24 9h1v1h-1zM28 9h1v1h-1zM0 10h2v1h-2zM3 10h1v1h-1zM6 10h1v1h-1zM9 10h2v1h-2zM14 10h1v1h-1zM16 10h2v1h-2zM20 10h2v1h-2zM23 10h5v1h-5zM1 11h1v1h-1zM3 11h3v1h-3zM7 11h3v1h-3zM11 11h1v1h-1zM13 11h2v1h-2zM16 11h1v1h-1zM19 11h2v1h-2zM22 11h2v1h-2zM25 11h1v1h-1zM27 11h2v1h-2zM2 12h1v1h-1zM4 12h1v1h-1zM6 12h3v1h-3zM11 12h5v1h-5zM17 12h2v1h-2zM20 12h1v1h-1zM25 12h3v1h-3zM0 13h1v1h-1zM2 13h2v1h-2zM7 13h2v1h-2zM10 13h1v1h-1zM12 13h2v1h-2zM15 13h5v1h-5zM21 13h2v1h-2zM27 13h2v1h-2zM0 14h3v1h-3zM4 14h1v1h-1zM6 14h1v1h-1zM11 14h3v1h-3zM16 14h4v1h-4zM21 14h4v1h-4zM28 14h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM19 15h1v1h-1zM21 15h2v1h-2zM24 15h2v1h-2zM28 15h1v1h-1zM0 16h2v1h-2zM3 16h1v1h-1zM6 16h2v1h-2zM10 16h4v1h-4zM16 16h1v1h-1zM18 16h1v1h-1zM21 16h1v1h-1zM24 16h2v1h-2zM3 17h3v1h-3zM7 17h1v1h-1zM11 17h2v1h-2zM14 17h3v1h-3zM25 17h2v1h-2zM0 18h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM8 18h2v1h-2zM12 18h1v1h-1zM15 18h1v1h-1zM17 18h1v1h-1zM21 18h1v1h-1zM23 18h2v1h-2zM26 18h1v1h-1zM3 19h2v1h-2zM9 19h2v1h-2zM14 19h4v1h-4zM19 19h1v1h-1zM21 19h1v1h-1zM26 19h1v1h-1zM28 19h1v1h-1zM0 20h2v1h-2zM3 20h6v1h-6zM10 20h1v1h-1zM12 20h1v1h-1zM14 20h1v1h-1zM17 20h2v1h-2zM20 20h5v1h-5zM26 20h1v1h-1zM28 20h1v1h-1zM8 21h1v1h-1zM10 21h3v1h-3zM14 21h1v1h-1zM17 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM27 21h2v1h-2zM0 22h7v1h-7zM8 22h1v1h-1zM11 22h3v1h-3zM19 22h2v1h-2zM22 22h1v1h-1zM24 22h1v1h-1zM27 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h2v1h-2zM12 23h2v1h-2zM15 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM9 24h4v1h-4zM15 24h1v1h-1zM17 24h1v1h-1zM20 24h5v1h-5zM26 24h3v1h-3zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h4v1h-4zM13 25h6v1h-6zM20 25h2v1h-2zM23 25h4v1h-4zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h2v1h-2zM11 26h3v1h-3zM16 26h5v1h-5zM23 26h1v1h-1zM25 26h2v1h-2zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM12 27h1v1h-1zM16 27h1v1h-1zM18 27h5v1h-5zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h1v1h-1zM10 28h1v1h-1zM12 28h3v1h-3zM16 28h1v1h-1zM19 28h4v1h-4zM27 28h1v1h-1z"},"Es1kfjLtcco8X7LJzBVgpkGw6mb5r8BRqY4xh3J8cN2C":{"n":33,"d":"M0 0h7v1h-7zM9 0h1v1h-1zM12 0h3v1h-3zM17 0h4v1h-4zM22 0h3v1h-3zM26 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h3v1h-3zM13 1h3v1h-3zM17 1h1v1h-1zM22 1h1v1h-1zM24 1h1v1h-1zM26 1h1v1h-1zM32 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h3v1h-3zM12 2h2v1h-2zM17 2h2v1h-2zM24 2h1v1h-1zM26 2h1v1h-1zM28 2h3v1h-3zM32 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h3v1h-3zM12 3h1v1h-1zM14 3h3v1h-3zM20 3h5v1h-5zM26 3h1v1h-1zM28 3h3v1h-3zM32 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM13 4h1v1h-1zM15 4h1v1h-1zM17 4h2v1h-2zM21 4h1v1h-1zM24 4h1v1h-1zM26 4h1v1h-1zM28 4h3v1h-3zM32 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h3v1h-3zM15 5h4v1h-4zM20 5h1v1h-1zM22 5h1v1h-1zM26 5h1v1h-1zM32 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h7v1h-7zM8 7h2v1h-2zM11 7h2v1h-2zM15 7h1v1h-1zM21 7h4v1h-4zM0 8h1v1h-1zM2 8h5v1h-5zM9 8h2v1h-2zM12 8h1v1h-1zM14 8h3v1h-3zM20 8h3v1h-3zM26 8h5v1h-5zM1 9h1v1h-1zM4 9h2v1h-2zM9 9h1v1h-1zM11 9h1v1h-1zM16 9h1v1h-1zM18 9h4v1h-4zM25 9h2v1h-2zM30 9h2v1h-2zM4 10h1v1h-1zM6 10h2v1h-2zM10 10h1v1h-1zM15 10h2v1h-2zM18 10h1v1h-1zM20 10h2v1h-2zM24 10h1v1h-1zM26 10h2v1h-2zM29 10h1v1h-1zM31 10h1v1h-1zM0 11h1v1h-1zM4 11h1v1h-1zM8 11h1v1h-1zM11 11h2v1h-2zM14 11h3v1h-3zM19 11h4v1h-4zM24 11h1v1h-1zM26 11h1v1h-1zM28 11h1v1h-1zM30 11h2v1h-2zM0 12h1v1h-1zM6 12h4v1h-4zM11 12h1v1h-1zM15 12h1v1h-1zM18 12h1v1h-1zM21 12h1v1h-1zM23 12h2v1h-2zM27 12h1v1h-1zM29 12h1v1h-1zM0 13h2v1h-2zM4 13h1v1h-1zM12 13h1v1h-1zM14 13h3v1h-3zM20 13h1v1h-1zM22 13h1v1h-1zM25 13h2v1h-2zM31 13h2v1h-2zM2 14h1v1h-1zM5 14h2v1h-2zM8 14h1v1h-1zM11 14h1v1h-1zM13 14h1v1h-1zM17 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h2v1h-2zM28 14h4v1h-4zM0 15h1v1h-1zM3 15h1v1h-1zM8 15h1v1h-1zM16 15h1v1h-1zM19 15h3v1h-3zM23 15h2v1h-2zM27 15h1v1h-1zM30 15h2v1h-2zM0 16h2v1h-2zM3 16h1v1h-1zM5 16h3v1h-3zM16 16h2v1h-2zM19 16h1v1h-1zM21 16h2v1h-2zM25 16h1v1h-1zM27 16h1v1h-1zM29 16h1v1h-1zM31 16h1v1h-1zM0 17h1v1h-1zM2 17h1v1h-1zM4 17h2v1h-2zM7 17h3v1h-3zM11 17h1v1h-1zM13 17h2v1h-2zM17 17h1v1h-1zM19 17h2v1h-2zM23 17h2v1h-2zM26 17h1v1h-1zM30 17h3v1h-3zM0 18h1v1h-1zM3 18h1v1h-1zM5 18h2v1h-2zM9 18h1v1h-1zM11 18h2v1h-2zM14 18h2v1h-2zM17 18h1v1h-1zM22 18h1v1h-1zM26 18h6v1h-6zM1 19h1v1h-1zM3 19h3v1h-3zM8 19h5v1h-5zM17 19h4v1h-4zM23 19h1v1h-1zM27 19h4v1h-4zM32 19h1v1h-1zM3 20h1v1h-1zM6 20h2v1h-2zM9 20h2v1h-2zM12 20h1v1h-1zM15 20h2v1h-2zM20 20h4v1h-4zM25 20h1v1h-1zM28 20h1v1h-1zM0 21h1v1h-1zM3 21h1v1h-1zM7 21h1v1h-1zM10 21h3v1h-3zM15 21h1v1h-1zM18 21h1v1h-1zM23 21h2v1h-2zM26 21h2v1h-2zM29 21h2v1h-2zM0 22h1v1h-1zM3 22h2v1h-2zM6 22h3v1h-3zM10 22h8v1h-8zM20 22h1v1h-1zM24 22h1v1h-1zM27 22h1v1h-1zM30 22h2v1h-2zM0 23h1v1h-1zM2 23h3v1h-3zM7 23h3v1h-3zM12 23h4v1h-4zM21 23h1v1h-1zM23 23h1v1h-1zM25 23h6v1h-6zM0 24h2v1h-2zM4 24h1v1h-1zM6 24h2v1h-2zM11 24h2v1h-2zM15 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h8v1h-8zM31 24h2v1h-2zM8 25h1v1h-1zM11 25h1v1h-1zM13 25h2v1h-2zM16 25h1v1h-1zM20 25h3v1h-3zM24 25h1v1h-1zM28 25h1v1h-1zM31 25h1v1h-1zM0 26h7v1h-7zM9 26h3v1h-3zM13 26h1v1h-1zM15 26h2v1h-2zM18 26h1v1h-1zM21 26h1v1h-1zM23 26h2v1h-2zM26 26h1v1h-1zM28 26h2v1h-2zM31 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM8 27h2v1h-2zM12 27h1v1h-1zM14 27h3v1h-3zM19 27h1v1h-1zM21 27h4v1h-4zM28 27h3v1h-3zM32 27h1v1h-1zM0 28h1v1h-1zM2 28h3v1h-3zM6 28h1v1h-1zM8 28h2v1h-2zM18 28h1v1h-1zM21 28h1v1h-1zM24 28h5v1h-5zM0 29h1v1h-1zM2 29h3v1h-3zM6 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM14 29h3v1h-3zM20 29h1v1h-1zM22 29h2v1h-2zM25 29h1v1h-1zM27 29h2v1h-2zM32 29h1v1h-1zM0 30h1v1h-1zM2 30h3v1h-3zM6 30h1v1h-1zM8 30h1v1h-1zM10 30h3v1h-3zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h1v1h-1zM26 30h1v1h-1zM30 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM10 31h1v1h-1zM16 31h1v1h-1zM18 31h4v1h-4zM24 31h1v1h-1zM27 31h4v1h-4zM0 32h7v1h-7zM8 32h1v1h-1zM17 32h1v1h-1zM19 32h1v1h-1zM21 32h6v1h-6zM31 32h1v1h-1z"},"rLX3Rjhoxeku8s4PvU5ZU6UoEqaMo7866T":{"n":29,"d":"M0 0h7v1h-7zM9 0h3v1h-3zM13 0h3v1h-3zM20 0h1v1h-1zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h8v1h-8zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h6v1h-6zM15 2h1v1h-1zM19 2h2v1h-2zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h2v1h-2zM14 3h2v1h-2zM17 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM12 4h1v1h-1zM15 4h5v1h-5zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h2v1h-2zM11 5h2v1h-2zM17 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h2v1h-2zM11 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM2 8h5v1h-5zM10 8h1v1h-1zM12 8h1v1h-1zM20 8h1v1h-1zM22 8h5v1h-5zM3 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM9 9h7v1h-7zM18 9h1v1h-1zM20 9h1v1h-1zM22 9h1v1h-1zM24 9h1v1h-1zM28 9h1v1h-1zM0 10h2v1h-2zM3 10h2v1h-2zM6 10h3v1h-3zM12 10h4v1h-4zM21 10h7v1h-7zM0 11h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM12 11h2v1h-2zM15 11h2v1h-2zM19 11h1v1h-1zM21 11h1v1h-1zM23 11h3v1h-3zM27 11h1v1h-1zM0 12h3v1h-3zM5 12h3v1h-3zM9 12h1v1h-1zM11 12h2v1h-2zM14 12h4v1h-4zM19 12h2v1h-2zM23 12h1v1h-1zM25 12h1v1h-1zM27 12h2v1h-2zM0 13h3v1h-3zM8 13h1v1h-1zM10 13h1v1h-1zM15 13h2v1h-2zM20 13h1v1h-1zM22 13h3v1h-3zM0 14h2v1h-2zM5 14h3v1h-3zM11 14h2v1h-2zM15 14h1v1h-1zM18 14h1v1h-1zM20 14h2v1h-2zM23 14h1v1h-1zM26 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM14 15h1v1h-1zM16 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM25 15h1v1h-1zM27 15h1v1h-1zM3 16h1v1h-1zM5 16h3v1h-3zM9 16h3v1h-3zM15 16h3v1h-3zM20 16h2v1h-2zM26 16h1v1h-1zM28 16h1v1h-1zM0 17h1v1h-1zM7 17h8v1h-8zM18 17h2v1h-2zM22 17h3v1h-3zM26 17h2v1h-2zM0 18h1v1h-1zM3 18h2v1h-2zM6 18h2v1h-2zM10 18h2v1h-2zM13 18h3v1h-3zM18 18h1v1h-1zM20 18h1v1h-1zM23 18h2v1h-2zM26 18h1v1h-1zM0 19h1v1h-1zM2 19h2v1h-2zM7 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM16 19h1v1h-1zM20 19h2v1h-2zM23 19h3v1h-3zM27 19h2v1h-2zM0 20h3v1h-3zM5 20h2v1h-2zM8 20h1v1h-1zM14 20h3v1h-3zM20 20h5v1h-5zM26 20h2v1h-2zM8 21h2v1h-2zM11 21h2v1h-2zM17 21h4v1h-4zM24 21h1v1h-1zM26 21h1v1h-1zM28 21h1v1h-1zM0 22h7v1h-7zM9 22h1v1h-1zM12 22h1v1h-1zM15 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM11 23h2v1h-2zM14 23h2v1h-2zM19 23h2v1h-2zM24 23h2v1h-2zM27 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h1v1h-1zM16 24h2v1h-2zM20 24h5v1h-5zM26 24h2v1h-2zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h2v1h-2zM11 25h1v1h-1zM14 25h1v1h-1zM17 25h2v1h-2zM20 25h1v1h-1zM25 25h4v1h-4zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h3v1h-3zM13 26h5v1h-5zM19 26h1v1h-1zM23 26h5v1h-5zM0 27h1v1h-1zM6 27h1v1h-1zM10 27h2v1h-2zM13 27h1v1h-1zM16 27h1v1h-1zM19 27h3v1h-3zM24 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h1v1h-1zM11 28h2v1h-2zM14 28h6v1h-6zM21 28h1v1h-1zM25 28h2v1h-2z"},"Li9aEmSVAcTeVMcxjXMmLHzxA1veKbz8mc":{"n":29,"d":"M0 0h7v1h-7zM12 0h4v1h-4zM17 0h1v1h-1zM19 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM13 1h6v1h-6zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM12 2h2v1h-2zM15 2h1v1h-1zM18 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h2v1h-2zM14 3h2v1h-2zM17 3h1v1h-1zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM15 4h3v1h-3zM20 4h1v1h-1zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM18 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h1v1h-1zM11 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM18 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM2 8h5v1h-5zM9 8h2v1h-2zM12 8h1v1h-1zM19 8h1v1h-1zM22 8h5v1h-5zM0 9h3v1h-3zM4 9h2v1h-2zM7 9h1v1h-1zM11 9h1v1h-1zM13 9h3v1h-3zM18 9h1v1h-1zM20 9h1v1h-1zM23 9h2v1h-2zM27 9h2v1h-2zM0 10h1v1h-1zM5 10h3v1h-3zM9 10h1v1h-1zM11 10h6v1h-6zM18 10h1v1h-1zM20 10h1v1h-1zM23 10h3v1h-3zM1 11h3v1h-3zM5 11h1v1h-1zM7 11h2v1h-2zM11 11h1v1h-1zM13 11h1v1h-1zM20 11h6v1h-6zM1 12h1v1h-1zM3 12h8v1h-8zM14 12h2v1h-2zM17 12h3v1h-3zM27 12h2v1h-2zM2 13h1v1h-1zM4 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM11 13h1v1h-1zM16 13h1v1h-1zM19 13h3v1h-3zM23 13h3v1h-3zM28 13h1v1h-1zM0 14h3v1h-3zM6 14h1v1h-1zM9 14h2v1h-2zM12 14h1v1h-1zM15 14h2v1h-2zM18 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM24 14h2v1h-2zM27 14h1v1h-1zM0 15h1v1h-1zM5 15h1v1h-1zM8 15h3v1h-3zM14 15h3v1h-3zM20 15h1v1h-1zM23 15h3v1h-3zM2 16h1v1h-1zM4 16h5v1h-5zM12 16h1v1h-1zM17 16h1v1h-1zM19 16h1v1h-1zM23 16h2v1h-2zM26 16h3v1h-3zM0 17h1v1h-1zM2 17h3v1h-3zM7 17h1v1h-1zM11 17h1v1h-1zM13 17h2v1h-2zM16 17h1v1h-1zM20 17h9v1h-9zM0 18h1v1h-1zM2 18h1v1h-1zM5 18h3v1h-3zM12 18h4v1h-4zM17 18h1v1h-1zM21 18h1v1h-1zM23 18h1v1h-1zM25 18h1v1h-1zM0 19h1v1h-1zM2 19h2v1h-2zM7 19h2v1h-2zM10 19h1v1h-1zM12 19h2v1h-2zM15 19h1v1h-1zM18 19h1v1h-1zM22 19h1v1h-1zM24 19h2v1h-2zM27 19h1v1h-1zM0 20h2v1h-2zM3 20h2v1h-2zM6 20h5v1h-5zM12 20h1v1h-1zM14 20h1v1h-1zM16 20h2v1h-2zM19 20h7v1h-7zM28 20h1v1h-1zM8 21h1v1h-1zM11 21h1v1h-1zM18 21h3v1h-3zM24 21h1v1h-1zM27 21h1v1h-1zM0 22h7v1h-7zM9 22h1v1h-1zM12 22h1v1h-1zM15 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h2v1h-2zM11 23h2v1h-2zM14 23h1v1h-1zM19 23h2v1h-2zM24 23h2v1h-2zM27 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM16 24h1v1h-1zM20 24h6v1h-6zM27 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h2v1h-2zM14 25h1v1h-1zM16 25h3v1h-3zM20 25h1v1h-1zM25 25h1v1h-1zM27 25h2v1h-2zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h6v1h-6zM15 26h1v1h-1zM17 26h2v1h-2zM20 26h1v1h-1zM22 26h3v1h-3zM26 26h2v1h-2zM0 27h1v1h-1zM6 27h1v1h-1zM10 27h2v1h-2zM20 27h6v1h-6zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h2v1h-2zM12 28h4v1h-4zM17 28h1v1h-1zM19 28h1v1h-1zM21 28h1v1h-1zM24 28h1v1h-1z"},"DRsAXLZPARCHnRm8yAzargiZuEByjFkwC3":{"n":29,"d":"M0 0h7v1h-7zM9 0h1v1h-1zM13 0h1v1h-1zM16 0h4v1h-4zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h1v1h-1zM14 1h4v1h-4zM19 1h2v1h-2zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h1v1h-1zM12 2h3v1h-3zM16 2h1v1h-1zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h1v1h-1zM11 3h1v1h-1zM13 3h3v1h-3zM17 3h3v1h-3zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM11 4h1v1h-1zM14 4h1v1h-1zM17 4h1v1h-1zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h2v1h-2zM16 7h2v1h-2zM0 8h1v1h-1zM2 8h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM11 8h2v1h-2zM14 8h4v1h-4zM24 8h1v1h-1zM27 8h1v1h-1zM8 9h1v1h-1zM12 9h1v1h-1zM14 9h2v1h-2zM17 9h2v1h-2zM20 9h3v1h-3zM25 9h1v1h-1zM27 9h1v1h-1zM0 10h2v1h-2zM3 10h1v1h-1zM5 10h2v1h-2zM8 10h1v1h-1zM12 10h2v1h-2zM21 10h1v1h-1zM24 10h5v1h-5zM3 11h2v1h-2zM7 11h1v1h-1zM9 11h3v1h-3zM17 11h3v1h-3zM21 11h4v1h-4zM28 11h1v1h-1zM0 12h3v1h-3zM6 12h2v1h-2zM10 12h3v1h-3zM20 12h3v1h-3zM24 12h3v1h-3zM28 12h1v1h-1zM0 13h4v1h-4zM7 13h2v1h-2zM11 13h1v1h-1zM13 13h1v1h-1zM17 13h1v1h-1zM20 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM0 14h2v1h-2zM3 14h1v1h-1zM5 14h4v1h-4zM14 14h1v1h-1zM20 14h1v1h-1zM22 14h2v1h-2zM26 14h3v1h-3zM1 15h1v1h-1zM3 15h1v1h-1zM9 15h3v1h-3zM13 15h2v1h-2zM17 15h2v1h-2zM21 15h3v1h-3zM27 15h2v1h-2zM0 16h1v1h-1zM2 16h2v1h-2zM6 16h1v1h-1zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h1v1h-1zM16 16h1v1h-1zM19 16h1v1h-1zM21 16h2v1h-2zM24 16h1v1h-1zM26 16h1v1h-1zM28 16h1v1h-1zM1 17h3v1h-3zM7 17h1v1h-1zM9 17h3v1h-3zM14 17h4v1h-4zM20 17h3v1h-3zM26 17h1v1h-1zM0 18h1v1h-1zM4 18h3v1h-3zM8 18h1v1h-1zM13 18h1v1h-1zM17 18h2v1h-2zM21 18h1v1h-1zM26 18h3v1h-3zM1 19h1v1h-1zM3 19h1v1h-1zM5 19h1v1h-1zM7 19h3v1h-3zM11 19h1v1h-1zM16 19h2v1h-2zM19 19h1v1h-1zM23 19h1v1h-1zM27 19h1v1h-1zM0 20h2v1h-2zM3 20h7v1h-7zM11 20h1v1h-1zM17 20h1v1h-1zM20 20h9v1h-9zM8 21h4v1h-4zM13 21h1v1h-1zM16 21h1v1h-1zM18 21h3v1h-3zM24 21h4v1h-4zM0 22h7v1h-7zM9 22h1v1h-1zM14 22h1v1h-1zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM27 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM13 23h2v1h-2zM17 23h2v1h-2zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h3v1h-3zM14 24h4v1h-4zM20 24h7v1h-7zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM9 25h1v1h-1zM11 25h2v1h-2zM14 25h1v1h-1zM16 25h1v1h-1zM21 25h1v1h-1zM25 25h1v1h-1zM27 25h2v1h-2zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h2v1h-2zM11 26h1v1h-1zM16 26h3v1h-3zM21 26h1v1h-1zM23 26h2v1h-2zM26 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM11 27h3v1h-3zM16 27h2v1h-2zM20 27h3v1h-3zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM19 28h2v1h-2zM22 28h1v1h-1zM24 28h1v1h-1zM26 28h3v1h-3z"}};
+const DON=[
+ {s:'BTC',n:'Bitcoin',net:'the Bitcoin network',a:'bc1q9z2ffe3f4vakxn2t8hyhh7fzv6f62akgtmaxxv',c:'#f7931a'},
+ {s:'ETH',n:'Ethereum',net:'the Ethereum network',a:EVM,c:'#627eea'},
+ {s:'USDC',n:'USDC',net:'Ethereum (ERC-20)',a:EVM,c:'#2775ca'},
+ {s:'USDT',n:'Tether',net:'Ethereum (ERC-20)',a:EVM,c:'#26a17b'},
+ {s:'SOL',n:'Solana',net:'the Solana network',a:'Es1kfjLtcco8X7LJzBVgpkGw6mb5r8BRqY4xh3J8cN2C',c:'#9945ff'},
+ {s:'BNB',n:'BNB',net:'BNB Smart Chain (BEP-20)',a:EVM,c:'#f3ba2f',tc:'#1b1b1b'},
+ {s:'XRP',n:'XRP',net:'the XRP Ledger',a:'rLX3Rjhoxeku8s4PvU5ZU6UoEqaMo7866T',c:'#4a5568'},
+ {s:'LTC',n:'Litecoin',net:'the Litecoin network',a:'Li9aEmSVAcTeVMcxjXMmLHzxA1veKbz8mc',c:'#345d9d'},
+ {s:'DOGE',n:'Dogecoin',net:'the Dogecoin network',a:'DRsAXLZPARCHnRm8yAzargiZuEByjFkwC3',c:'#c2a633'}];
+// =================================================
+const $=id=>document.getElementById(id),RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const API='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/';
+const FEEDS={hour:['all_hour','past hour, all magnitudes'],day:['2.5_day','past 24 hours, M2.5+']};
+// Built-in sample used only if the USGS request is blocked or offline: [mag,lat,lon,depth km,place,minutes ago]
+const DEMO=[[6.1,38.3,142.4,32,'84 km E of Ofunato, Japan',35],[5.4,-33.1,-71.9,28,'40 km W of Valparaiso, Chile',90],[4.8,36.7,-121.4,8,'9 km S of Hollister, CA',120],[5.2,-6.2,129.9,120,'160 km N of Saumlaki, Indonesia',200],[3.2,19.4,-155.3,9,'6 km SW of Volcano, Hawaii',45],[4.6,38.0,23.8,14,'12 km NE of Athens, Greece',300],[5.9,28.4,84.7,15,'55 km NW of Pokhara, Nepal',410],[3.8,64.1,-21.3,5,'8 km S of Reykjavik, Iceland',60],[4.9,-41.3,174.8,22,'30 km SE of Wellington, New Zealand',520],[3.1,35.7,-117.6,6,'12 km SW of Ridgecrest, CA',15],[6.4,-4.5,152.6,40,'110 km S of Kokopo, Papua New Guinea',700],[4.4,17.2,-99.9,35,'28 km SW of Acapulco, Mexico',860],[5.0,40.8,29.9,10,'18 km E of Istanbul, Turkey',1000],[3.5,61.3,-149.9,45,'14 km N of Anchorage, Alaska',150]];
+const LAND=[ // coarse continents [lon,lat,...] – enough for a dotted globe
+[-168,66,-162,70,-156,71,-141,70,-128,70,-115,68,-95,72,-85,70,-80,63,-94,59,-93,52,-82,52,-79,57,-77,62,-70,60,-62,57,-56,52,-60,47,-66,44,-70,42,-74,40,-76,35,-81,31,-80,26,-83,29,-89,30,-94,29,-97,26,-97,21,-95,18,-91,19,-87,21,-88,16,-84,15,-83,10,-79,9,-77,8,-80,7,-84,9,-87,13,-92,14,-96,16,-105,20,-106,23,-110,27,-114,31,-112,28,-110,24,-113,26,-115,29,-117,33,-121,35,-124,40,-124,47,-128,51,-133,56,-140,60,-148,60,-154,58,-163,55,-158,58,-165,62],
+[-73,78,-60,82,-30,83,-20,80,-20,72,-24,69,-40,65,-44,60,-50,63,-54,68,-58,75],
+[-80,73,-68,70,-62,66,-70,62,-78,64,-90,70],[-85,22,-77,20,-74,20,-80,23],
+[-77,8,-72,12,-63,10,-55,6,-50,0,-44,-2,-35,-5,-35,-9,-39,-14,-41,-22,-48,-26,-53,-34,-58,-38,-62,-39,-65,-42,-66,-47,-69,-51,-68,-54,-72,-54,-75,-50,-74,-42,-73,-37,-71,-30,-70,-18,-76,-14,-81,-6,-80,-1,-78,3],
+[-10,36,-9,43,-2,44,-4,48,2,51,8,54,9,57,11,54,14,54,21,55,24,59,30,60,22,61,21,65,25,66,18,63,17,60,12,56,8,58,5,62,14,68,22,70,30,71,40,68,44,68,60,69,70,73,80,73,100,77,112,74,130,71,140,72,160,70,170,70,180,68,180,65,170,60,163,58,156,51,155,57,143,59,136,54,141,52,140,48,133,43,129,41,127,38,126,35,127,40,121,40,122,37,119,35,122,31,121,26,117,23,110,21,108,17,109,12,105,9,100,13,99,8,104,1,100,3,98,8,98,16,94,17,91,22,87,21,80,15,77,8,73,17,72,22,67,25,61,25,57,26,56,24,59,22,52,16,43,13,39,21,35,28,34,31,36,36,30,36,26,38,26,40,23,40,22,37,20,40,19,42,18,40,16,38,15,40,12,42,9,44,6,43,3,43,0,39,-2,37,-6,36],
+[-17,21,-16,28,-10,30,-6,36,10,37,11,33,20,31,25,32,32,31,34,28,38,22,43,12,51,12,50,8,41,-2,40,-10,40,-16,35,-24,32,-29,27,-34,20,-35,18,-32,14,-23,12,-14,13,-8,9,-1,9,4,5,6,-4,5,-8,4,-13,8,-17,14],
+[114,-22,122,-18,130,-12,136,-12,137,-16,142,-11,146,-19,153,-26,151,-34,146,-39,141,-38,135,-34,129,-32,116,-35,115,-30],
+[-5,50,1,51,2,53,-2,56,-2,58,-5,59,-6,56,-3,54,-5,52],[-10,52,-6,52,-6,55,-10,54],[-24,65,-14,66,-14,64,-22,63],
+[130,31,132,34,136,34,140,36,142,40,141,45,145,44,142,42,140,41,139,38,136,36,132,35,130,33],
+[95,5,98,4,106,-6,104,-6,100,-2],[109,2,117,7,119,1,116,-4,110,-3],[106,-6,114,-8,106,-7],[131,-1,141,-3,150,-10,141,-9,138,-8],
+[44,-25,48,-25,50,-15,49,-12,44,-16],[173,-35,178,-38,175,-41,173,-39],[172,-41,174,-42,170,-46,167,-46,170,-43],[120,18,122,18,124,12,126,7,122,7,121,14]];
+
+// ---------- three.js scene ----------
+const cv=$('c'),R=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+R.setPixelRatio(Math.min(devicePixelRatio,2));
+const S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,.1,100),W=new THREE.Group(),G=new THREE.Group(),MK=new THREE.Group();
+S.add(W);W.add(G);G.add(MK);
+const narrow=()=>innerWidth<=760,base=()=>narrow()?5.2:3.5;
+let zoom=RM?base():8,zT=base();
+const P=(la,lo,r=1)=>{la*=Math.PI/180;lo*=Math.PI/180;return new THREE.Vector3(Math.cos(la)*Math.sin(lo)*r,Math.sin(la)*r,Math.cos(la)*Math.cos(lo)*r)};
+const ocean=new THREE.Mesh(new THREE.SphereGeometry(.995,64,64),new THREE.MeshBasicMaterial({color:0x08182b}));W.add(ocean);
+const shader=(f,side,blend)=>new THREE.ShaderMaterial({transparent:true,side,blending:THREE.AdditiveBlending,depthWrite:false,vertexShader:'varying vec3 n;void main(){n=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 n;void main(){'+f+'}'});
+W.add(new THREE.Mesh(new THREE.SphereGeometry(1.2,64,64),shader('float i=pow(.68-dot(n,vec3(0,0,1.)),3.);gl_FragColor=vec4(.25,.6,1.,1.)*i*1.4;',THREE.BackSide)));
+W.add(new THREE.Mesh(new THREE.SphereGeometry(1.004,64,64),shader('float i=pow(1.-dot(n,vec3(0,0,1.)),3.);gl_FragColor=vec4(.3,.65,1.,1.)*i*.55;',THREE.FrontSide)));
+var landPts;
+// land → dots
+{const mc=document.createElement('canvas');mc.width=720;mc.height=360;const x=mc.getContext('2d');x.fillStyle='#fff';
+ LAND.forEach(p=>{x.beginPath();for(let i=0;i<p.length;i+=2){const X=(p[i]+180)*2,Y=(90-p[i+1])*2;i?x.lineTo(X,Y):x.moveTo(X,Y)}x.fill()});x.fillRect(0,324,720,36);
+ const d=x.getImageData(0,0,720,360).data,v=[];
+ for(let la=-86;la<=86;la+=1.4){const n=Math.max(1,Math.round(360*Math.cos(la*Math.PI/180)/1.4));for(let k=0;k<n;k++){const lo=-180+360*k/n;if(d[(((90-la)*2|0)*720+((lo+180)*2|0))*4+3]>0){const p=P(la,lo,1.001);v.push(p.x,p.y,p.z)}}}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+ const t=document.createElement('canvas');t.width=t.height=32;const tx=t.getContext('2d');tx.fillStyle='#fff';tx.beginPath();tx.arc(16,16,14,0,7);tx.fill();
+ G.add(landPts=new THREE.Points(g,new THREE.PointsMaterial({size:.0125,color:0x6fb3e6,map:new THREE.CanvasTexture(t),alphaTest:.4,transparent:true,opacity:.9})));}
+// graticule
+{const m=new THREE.LineBasicMaterial({color:0x335b88,transparent:true,opacity:.28}),L=(f,c)=>{const a=[];for(let i=0;i<=72;i++)a.push(f(i*5));G.add(c?new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(a),m):new THREE.Line(new THREE.BufferGeometry().setFromPoints(a),m))};
+ for(let la=-60;la<=60;la+=30)L(o=>P(la,o,1.002),1);for(let lo=0;lo<180;lo+=30)L(a=>P(a<=180?a-90:270-a,lo+(a<=180?0:180),1.002));}
+// stars
+{const v=[];for(let i=0;i<900;i++){const u=Math.random()*2-1,a=Math.random()*6.283,s=Math.sqrt(1-u*u);v.push(25*s*Math.cos(a),25*u,25*s*Math.sin(a))}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));S.add(new THREE.Points(g,new THREE.PointsMaterial({size:.1,color:0x9fb8e0,transparent:true,opacity:.6})))}
+
+// ---------- labels ----------
+const CN=[['United States',39,-98],['Canada',58,-106],['Mexico',24,-102],['Brazil',-10,-52],['Argentina',-37,-65],['Chile',-30,-71],['Peru',-10,-75],['Colombia',4,-73],['Venezuela',7,-66],['Bolivia',-17,-65],['United Kingdom',54,-2],['France',46.5,2.5],['Spain',40,-3.5],['Germany',51,10],['Italy',42.5,12.5],['Greece',39,22],['Turkey',39,35],['Ukraine',49,32],['Russia',62,95],['Iran',32,54],['Saudi Arabia',24,45],['Egypt',27,30],['Algeria',28,2],['Nigeria',9,8],['Ethiopia',9,40],['Kenya',0,38],['DR Congo',-3,23],['South Africa',-29,24],['India',22,79],['Pakistan',30,70],['Afghanistan',34,66],['Nepal',28.3,84],['Kazakhstan',48,67],['China',35,103],['Mongolia',46,104],['Japan',37,138],['South Korea',36.5,128],['Myanmar',21,96],['Thailand',15,101],['Vietnam',16,107],['Philippines',12,122],['Indonesia',-2,115],['Papua New Guinea',-6,144],['Australia',-25,134],['New Zealand',-42,173],['Fiji',-17.8,178],['Tonga',-20,-175],['Iceland',65,-18],['Greenland',72,-41]];
+const CT=[['Tokyo',35.68,139.69],['Seoul',37.57,126.98],['Taipei',25.03,121.57],['Beijing',39.9,116.4],['Shanghai',31.23,121.47],['Manila',14.6,120.98],['Jakarta',-6.2,106.85],['Bangkok',13.76,100.5],['Delhi',28.61,77.21],['Kathmandu',27.7,85.32],['Karachi',24.86,67],['Tehran',35.69,51.39],['Istanbul',41.01,28.98],['Athens',37.98,23.73],['Rome',41.9,12.5],['Madrid',40.42,-3.7],['Paris',48.86,2.35],['London',51.5,-.12],['Reykjavik',64.15,-21.94],['Moscow',55.76,37.62],['Cairo',30.04,31.24],['Lagos',6.52,3.38],['Nairobi',-1.29,36.82],['Johannesburg',-26.2,28.05],['Sydney',-33.87,151.21],['Wellington',-41.29,174.78],['Port Moresby',-9.44,147.18],['Honolulu',21.31,-157.86],['Anchorage',61.22,-149.9],['Vancouver',49.28,-123.12],['San Francisco',37.77,-122.42],['Los Angeles',34.05,-118.24],['Mexico City',19.43,-99.13],['New York',40.71,-74.01],['Bogota',4.71,-74.07],['Lima',-12.05,-77.04],['Santiago',-33.45,-70.67],['Buenos Aires',-34.6,-58.38],['Sao Paulo',-23.55,-46.63]];
+const OC=[['North Pacific',28,-150],['South Pacific',-30,-125],['North Atlantic',30,-40],['South Atlantic',-25,-15],['Indian Ocean',-15,80],['Arctic Ocean',82,20],['Southern Ocean',-62,100]];
+const ST=[['Alabama',32.8,-86.8],['Alaska',64,-152],['Arizona',34.2,-111.7],['Arkansas',34.9,-92.4],['California',37.2,-119.5],['Colorado',39,-105.5],['Connecticut',41.6,-72.7],['Delaware',39,-75.5],['Florida',28.6,-82.4],['Georgia',32.7,-83.4],['Hawaii',20.5,-157.5],['Idaho',44.4,-114.6],['Illinois',40,-89.2],['Indiana',39.9,-86.3],['Iowa',42.1,-93.5],['Kansas',38.5,-98.4],['Kentucky',37.5,-85.3],['Louisiana',31,-92],['Maine',45.4,-69.2],['Maryland',39,-76.8],['Massachusetts',42.3,-71.8],['Michigan',44.3,-85.4],['Minnesota',46,-94.3],['Mississippi',32.7,-89.7],['Missouri',38.4,-92.5],['Montana',47,-109.6],['Nebraska',41.5,-99.8],['Nevada',39.3,-116.6],['New Hampshire',43.7,-71.6],['New Jersey',40.1,-74.7],['New Mexico',34.4,-106],['New York',42.9,-75.5],['North Carolina',35.5,-79.4],['North Dakota',47.5,-100.5],['Ohio',40.3,-82.8],['Oklahoma',35.6,-97.5],['Oregon',43.9,-120.6],['Pennsylvania',40.9,-77.8],['Rhode Island',41.7,-71.5],['South Carolina',33.9,-80.9],['South Dakota',44.4,-100.2],['Tennessee',35.8,-86.3],['Texas',31.5,-99.3],['Utah',39.3,-111.7],['Vermont',44,-72.7],['Virginia',37.5,-78.8],['Washington',47.4,-120.5],['West Virginia',38.6,-80.6],['Wisconsin',44.6,-89.9],['Wyoming',43,-107.5],['British Columbia',53.7,-127.6],['Alberta',55,-115],['Saskatchewan',54.5,-106],['Manitoba',55,-98],['Ontario',50.5,-86],['Quebec',52,-71.5],['New Brunswick',46.5,-66.4],['Nova Scotia',45,-63],['Newfoundland',53.5,-60],['Yukon',64.3,-135],['Northwest Territories',64.8,-119],['Nunavut',70,-95],['Western Australia',-26,121],['Northern Territory',-19.5,133],['South Australia',-30,135],['Queensland',-22.5,144],['New South Wales',-32.5,146],['Victoria',-37,144.5],['Tasmania',-42,146.7]];
+const LB=[];[['c',CN],['t',CT],['o',OC],['s',ST]].forEach(([k,a])=>a.forEach(([n,la,lo])=>{const e=document.createElement('div');e.className='lb '+k;e.textContent=n;e.style.display='none';$('lbl').appendChild(e);LB.push({e,k,n,p:P(la,lo,1.012),on:0})}));
+const lv=new THREE.Vector3(),ln=new THREE.Vector3();
+function labels(){const w=innerWidth,h=innerHeight,c=cam.position,cand=[];
+ LB.forEach(b=>{lv.copy(b.p).applyMatrix4(G.matrixWorld);ln.copy(lv).sub(W.position).normalize();
+  const dx=c.x-lv.x,dy=c.y-lv.y,dz=c.z-lv.z,f=(ln.x*dx+ln.y*dy+ln.z*dz)/Math.hypot(dx,dy,dz),vis=b.k==='t'?zoom<2.9:b.k==='c'?zoom<4.6:b.k==='s'?zoom<2.3:zoom>2.2;
+  if(vis&&f>=.2){lv.project(cam);cand.push([b,(lv.x+1)/2*w,(1-lv.y)/2*h,f])}else if(b.on){b.e.style.display='none';b.on=0}});
+ const pr={c:0,s:1,t:2,o:3},r=[];
+ cand.sort((a,b)=>pr[a[0].k]-pr[b[0].k]||b[3]-a[3]).forEach(([b,x,y,f])=>{
+  const lw=b.n.length*(b.k==='c'?8:b.k==='o'?11:6.4)+(b.k==='t'?12:0),lh=15,x1=x-lw/2,y1=y-lh/2;
+  if(x<-60||y<-20||x>w+60||y>h+20||r.some(q=>x1<q[2]&&x1+lw>q[0]&&y1<q[3]&&y1+lh>q[1])){if(b.on){b.e.style.display='none';b.on=0}return}
+  r.push([x1,y1,x1+lw,y1+lh]);b.on=1;b.e.style.display='block';b.e.style.opacity=Math.min(1,(f-.2)*3);b.e.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`})}
+
+// ---------- data + markers ----------
+let all=[],view=[],marks=[],sel=null,feed='day',live=false,minMag=0,mode='map';
+const hx=m=>m<3?'#5eead4':m<4.5?'#ffd166':m<6?'#ff7a45':'#ff3d6e';
+const sG=new THREE.SphereGeometry(1,14,14),rG=new THREE.RingGeometry(.84,1,48);
+const selRing=new THREE.Mesh(rG,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,side:2,depthWrite:false}));
+const selLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,.16)]),new THREE.LineBasicMaterial({color:0xffffff}));
+selRing.visible=selLine.visible=false;MK.add(selRing,selLine);
+const Z=new THREE.Vector3(0,0,1);
+function build(){buildMap();
+ marks.forEach(k=>{MK.remove(k.m);k.m.material.dispose();if(k.r){MK.remove(k.r);k.r.material.dispose()}});marks=[];
+ const big=[...view].sort((a,b)=>b.mag-a.mag).slice(0,70);
+ view.forEach((q,i)=>{const c=new THREE.Color(hx(q.mag)),pos=P(q.lat,q.lon,1.004),s=.006+.0042*Math.max(q.mag,1);
+  const m=new THREE.Mesh(sG,new THREE.MeshBasicMaterial({color:c}));m.position.copy(pos);m.scale.setScalar(.0001);MK.add(m);
+  let r=null;if(big.includes(q)){r=new THREE.Mesh(rG,new THREE.MeshBasicMaterial({color:c,transparent:true,side:2,depthWrite:false}));r.position.copy(pos);r.quaternion.setFromUnitVectors(Z,pos.clone().normalize());MK.add(r)}
+  marks.push({q,m,r,s,pos,d:1.1+Math.min(i,120)*.012,ph:Math.random()})});
+ if(sel&&!view.includes(sel)){const f=view.find(q=>q.id===sel.id);f?(sel=f,mkSel(f,true)):closeCard()}
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
+const dd=(v,a,b)=>Math.abs(v).toFixed(3)+'° '+(v>=0?a:b);
+function render(){
+ view=all.filter(q=>q.mag>=minMag).sort((a,b)=>b.time-a.time);
+ $('s1').textContent=view.length;$('s2').textContent=view.length?Math.max(...view.map(q=>q.mag)).toFixed(1):'–';$('s3').textContent=view.length?ago(view[0].time).replace(' ago',''):'–';
+ $('list').innerHTML=view.length?view.map(q=>`<li><button data-id="${esc(q.id)}" class="${sel&&sel.id===q.id?'on':''}"><span class="b" style="background:${hx(q.mag)}">${q.mag.toFixed(1)}</span><span><div class="t">${esc(q.place)}</div><div class="m">${ago(q.time)} · ${q.depth.toFixed(0)} km deep</div></span></button></li>`).join(''):'<li class="empty">No quakes match this filter. Try a lower magnitude or a longer time window.</li>';
+ build();
+}
+async function tfetch(u){const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw 0;return await r.json()}finally{clearTimeout(t)}}
+const tcase=x=>String(x||'Unknown region').toLowerCase().replace(/(^|[\s,(-])([a-z])/g,(m,a,b)=>a+b.toUpperCase());
+const SRC={
+ usgs:{n:'USGS',get:async()=>(await tfetch(API+FEEDS[feed][0]+'.geojson')).features.filter(f=>f.properties.mag!=null).map(f=>({id:f.id,src:'USGS',mag:f.properties.mag,mt:f.properties.magType,place:f.properties.place||'Unknown location',time:f.properties.time,lon:f.geometry.coordinates[0],lat:f.geometry.coordinates[1],depth:f.geometry.coordinates[2]||0,url:f.properties.url,detail:f.properties.detail,tsu:f.properties.tsunami,felt:f.properties.felt}))},
+ // EMSC (European-Mediterranean Seismological Centre) via its public FDSN service
+ emsc:{n:'EMSC',get:async()=>{const h=feed==='hour',st=new Date(Date.now()-(h?36e5:864e5)).toISOString().slice(0,19);
+  return (await tfetch('https://www.seismicportal.eu/fdsnws/event/1/query?format=json&orderby=time&limit=500&minmag='+(h?0:2.5)+'&starttime='+st)).features.filter(f=>f.properties.mag!=null).map(f=>{const p=f.properties,c=f.geometry.coordinates;return{id:'emsc'+(p.unid||f.id),src:'EMSC',mag:p.mag,mt:p.magtype,place:tcase(p.flynn_region),time:Date.parse(p.time),lon:p.lon!=null?p.lon:c[0],lat:p.lat!=null?p.lat:c[1],depth:Math.abs(p.depth!=null?p.depth:(c[2]||0)),url:/^\d+$/.test(String(p.source_id))?'https://www.emsc-csem.org/Earthquake_information/earthquake.php?id='+p.source_id:'',tsu:0,felt:0}})}}};
+async function load(){
+ $('src').textContent='Loading '+FEEDS[feed][1]+'…';
+ const pref=$('src2').value,order=pref==='auto'?['usgs','emsc']:[pref];let got=null;
+ for(const k of order){try{all=await SRC[k].get();got=SRC[k].n;break}catch(e){}}
+ live=!!got;
+ if(got){detect();$('src').textContent='Live from '+got+(pref==='auto'&&got!=='USGS'?' (backup, USGS could not be reached)':'')+' · '+FEEDS[feed][1]+' · updated '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+ else{all=DEMO.map((d,i)=>({id:'demo'+i,src:'sample',mag:d[0],mt:'sample',lat:d[1],lon:d[2],depth:d[3],place:d[4],time:Date.now()-d[5]*6e4,url:'',tsu:0,felt:0}));
+  $('src').textContent='Sample data – '+(pref==='auto'?'neither USGS nor EMSC could be reached.':'could not reach '+SRC[pref].n+'.')+' Open this file in a normal browser tab for live data.';
+  banner('No live earthquake source could be reached, so these are sample quakes. The chat preview blocks outside connections. Open the downloaded file in Chrome or Safari for live data (USGS, with EMSC as a backup).')}
+ $('dot').classList.toggle('demo',!live);render()}
+
+// ---------- selection + card ----------
+const tgt={x:0,y:0};let fly=false,idle=0;
+const DC={};
+function mkSel(q,on){if(!q)return;const m=MM[q.id],e=m&&m.getElement();if(e&&e.firstChild)e.firstChild.classList.toggle('s',on);
+ if(!on){selRing.visible=selLine.visible=false;return}
+ const k=marks.find(k=>k.q.id===q.id);if(!k)return;const o=new THREE.Quaternion().setFromUnitVectors(Z,k.pos.clone().normalize());
+ selRing.position.copy(k.pos);selRing.quaternion.copy(o);selLine.position.copy(k.pos);selLine.quaternion.copy(o);selRing.visible=selLine.visible=true}
+function focus(q){if(mode==='map')LM.flyTo([q.lat,q.lon],Math.max(LM.getZoom(),8),{duration:1.6});else{tgt.y=-q.lon*Math.PI/180;tgt.x=Math.max(-1.1,Math.min(1.1,q.lat*Math.PI/180));zT=narrow()?2.8:1.7;fly=true}}
+function pick(q,quiet){
+ mkSel(sel,false);sel=q;mkSel(q,true);if(!quiet)focus(q);card();
+ document.querySelectorAll('#list button').forEach(b=>{const on=b.dataset.id===q.id;b.classList.toggle('on',on);if(on&&!quiet)b.scrollIntoView({block:'nearest',behavior:'smooth'})})}
+function card(){
+ const q=sel;if(!q)return;
+ const m=q.place.match(/^(.*?) of (.*)$/),city=m?m[2]:q.place,rel=m?m[1]:'';
+ const ok=/^https:\/\/(earthquake\.usgs\.gov|www\.emsc-csem\.org)\//.test(q.url||'');
+ const head=`<div class="big" style="color:${hx(q.mag)}">${q.mag.toFixed(1)}<small>${esc(q.mt||'magnitude')}</small></div><h2 id="gc">${esc(city)}</h2><p class="mu" id="gs">${rel?esc(rel)+' from this place':'Epicenter region'}</p>`;
+ const body=`<dl><div><dt>Latitude</dt><dd>${dd(q.lat,'N','S')}</dd></div><div><dt>Longitude</dt><dd>${dd(q.lon,'E','W')}</dd></div>
+ <div><dt>Depth</dt><dd>${q.depth.toFixed(1)} km</dd></div><div><dt>When</dt><dd>${ago(q.time)}</dd></div>
+ <div class="full"><dt>Local time</dt><dd>${new Date(q.time).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</dd></div>
+ <div><dt>Tsunami alert</dt><dd>${q.src==='EMSC'?'–':q.tsu?'Issued':'None'}</dd></div><div><dt>Felt reports</dt><dd>${q.felt||'–'}</dd></div></dl>
+ <code class="co" id="co">${q.lat.toFixed(4)}, ${q.lon.toFixed(4)}</code>
+ <div class="acts" style="margin-top:10px"><button id="cp">Copy coordinates</button><a href="https://www.openstreetmap.org/?mlat=${q.lat}&mlon=${q.lon}#map=8/${q.lat}/${q.lon}" target="_blank" rel="noopener">Open map</a>${ok?`<a href="${esc(q.url)}" target="_blank" rel="noopener">${esc(q.src||'USGS')} page</a>`:''}</div>
+ <h3>See it on other trackers</h3><div class="lk"><span id="ag"></span>
+ <a href="https://www.emsc-csem.org/Earthquake_map/" target="_blank" rel="noopener">EMSC live map</a>
+ <a href="https://www.volcanodiscovery.com/earthquakes/today.html" target="_blank" rel="noopener">VolcanoDiscovery</a>
+ <a href="https://www.windy.com/-Earthquakes-earthquakes?earthquakes,${q.lat.toFixed(3)},${q.lon.toFixed(3)},7" target="_blank" rel="noopener">Windy quakes</a>
+ <a href="https://earth.google.com/web/@${q.lat.toFixed(4)},${q.lon.toFixed(4)},0a,25000d,35y,0h,0t,0r" target="_blank" rel="noopener">Google Earth</a>
+ <a href="https://worldview.earthdata.nasa.gov/?v=${(q.lon-2).toFixed(2)},${(q.lat-1.5).toFixed(2)},${(q.lon+2).toFixed(2)},${(q.lat+1.5).toFixed(2)}" target="_blank" rel="noopener">NASA Worldview</a></div>
+ <h3>ShakeMap · predicted shaking</h3><div id="sm" class="mu">Loading…</div><h3>Nearby cities</h3><div id="nc" class="mu">Loading…</div>`;
+ $('card').innerHTML='<button class="x" id="cx" aria-label="Close">×</button>'+head+body;$('card').classList.add('open');$('cx').onclick=closeCard;geo(q);
+ $('cp').onclick=async e=>{const b=e.currentTarget,ok=await copyText(q.lat.toFixed(4)+', '+q.lon.toFixed(4));b.textContent=ok?'Copied ✓':'Copy blocked – select above';if(!ok){const r=document.createRange();r.selectNodeContents($('co'));const g=getSelection();g.removeAllRanges();g.addRange(r)}setTimeout(()=>{b.textContent='Copy coordinates'},2200)};
+ detail(q)}
+const jf=async u=>{const r=await fetch(u);if(!r.ok)throw 0;return r.json()};
+async function copyText(t){
+ try{await navigator.clipboard.writeText(t);return true}catch(e){}
+ try{const a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);a.select();a.setSelectionRange(0,t.length);const ok=document.execCommand('copy');a.remove();return ok}catch(e){return false}}
+const GC={},AG={JP:['JMA (Japan)','https://www.data.jma.go.jp/multi/quake/index.html?lang=en'],IT:['INGV (Italy)','https://terremoti.ingv.it/en'],NZ:['GeoNet (New Zealand)','https://www.geonet.org.nz/earthquake'],CA:['Earthquakes Canada','https://earthquakescanada.nrcan.gc.ca/index-en.php'],PH:['PHIVOLCS (Philippines)','https://earthquake.phivolcs.dost.gov.ph/'],CL:['CSN (Chile)','https://www.sismologia.cl/'],MX:['SSN (Mexico)','https://www.ssn.unam.mx/'],TR:['AFAD (Turkey)','https://deprem.afad.gov.tr/last-earthquakes.html'],GR:['NOA (Greece)','https://www.gein.noa.gr/en/'],TW:['CWA (Taiwan)','https://scweb.cwa.gov.tw/en-US'],ID:['BMKG (Indonesia)','https://www.bmkg.go.id/'],IN:['NCS (India)','https://riseq.seismo.gov.in/'],PE:['IGP (Peru)','https://www.igp.gob.pe/']};
+// Reverse geocoding: BigDataCloud client API (no key), OpenStreetMap Nominatim as backup
+async function geo(q){
+ let g=GC[q.id];
+ if(!g){g={};try{const j=await jf(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${q.lat}&longitude=${q.lon}&localityLanguage=en`);g={city:j.city||j.locality||'',state:j.principalSubdivision||'',country:j.countryName||'',cc:j.countryCode||''}}catch(e){}
+  if(!g.city&&!g.state){try{const j=await jf(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=${q.lat}&lon=${q.lon}`),a=j.address||{};g={city:a.city||a.town||a.village||a.county||'',state:a.state||'',country:a.country||'',cc:(a.country_code||'').toUpperCase()}}catch(e){}}
+  GC[q.id]=g}
+ const c=$('gc'),t=$('gs');if(!c||!sel||sel.id!==q.id)return;
+ const m=q.place.match(/^.*? of (.*)$/),city=g.city||(m?m[1]:q.place),where=[g.state,g.country].filter(Boolean).join(', ');
+ c.textContent=city;t.innerHTML=(where?'<b>'+esc(where)+'</b><br>':'')+'<span style="opacity:.8">'+esc(q.src||'USGS')+': '+esc(q.place)+'</span>';
+ const ag=$('ag'),A=AG[g.cc];if(ag&&A)ag.innerHTML='<a href="'+A[1]+'" target="_blank" rel="noopener">'+esc(A[0])+'</a>';
+ if(mode==='map'&&LM)L.popup({closeButton:false,autoPan:false,offset:[0,-14]}).setLatLng([q.lat,q.lon]).setContent('<b>'+esc(city)+'</b><br>'+esc(where||q.place)).openOn(LM)}
+async function detail(q){
+ const set=(id,h)=>{const e=$(id);if(e&&sel&&sel.id===q.id)e.innerHTML=h};
+ if(!q.detail){set('sm','Not available for this data source.');set('nc','–');return}
+ try{const j=DC[q.id]||(DC[q.id]=await(await fetch(q.detail)).json()),pr=j.properties.products||{},sm=pr.shakemap&&pr.shakemap[0],c=sm&&sm.contents,im=c&&(c['download/intensity.jpg']||c['download/pga.jpg']);
+  set('sm',im&&/^https:\/\//.test(im.url)?`<img class="sm" src="${esc(im.url)}" alt="ShakeMap showing predicted shaking around the epicenter">`:'No ShakeMap for this quake. USGS usually makes them for larger events.');
+  const nc=pr['nearby-cities']&&pr['nearby-cities'][0],u=nc&&nc.contents['nearby-cities.json'];
+  if(u){const cs=await(await fetch(u.url)).json();set('nc','<ul class="nc">'+cs.slice(0,5).map(x=>`<li><span>${esc(x.name)}</span><span>${esc(x.distance)} km ${esc(x.direction)}</span></li>`).join('')+'</ul>')}else set('nc','–')
+ }catch(e){set('sm','Couldn’t load details from USGS.');set('nc','–')}}
+function closeCard(){if(LM)LM.closePopup();mkSel(sel,false);sel=null;$('card').classList.remove('open');zT=base();fly=false;idle=0;document.querySelectorAll('#list .on').forEach(b=>b.classList.remove('on'))}
+
+// ---------- interaction ----------
+const rc=new THREE.Raycaster(),ptrs=new Map();let vel={x:0,y:0},down=null,pd=0,spin=RM?.0012:.035;
+const ndc=e=>new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,e);down={x:e.clientX,y:e.clientY,t:performance.now()};fly=false;vel={x:0,y:0};if(ptrs.size==2){const[a,b]=[...ptrs.values()];pd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}});
+cv.addEventListener('pointermove',e=>{
+ const p=ptrs.get(e.pointerId);
+ if(p){ptrs.set(e.pointerId,e);
+  if(ptrs.size==2){const[a,b]=[...ptrs.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);zT=Math.max(1.6,Math.min(7,zT*pd/d));pd=d}
+  else{const k=.0045*zoom/3.5,dx=e.clientX-p.clientX,dy=e.clientY-p.clientY;G.rotation.y+=dx*k;G.rotation.x=Math.max(-1.3,Math.min(1.3,G.rotation.x+dy*k));vel={x:dx*k,y:dy*k};idle=0}
+ }else{rc.setFromCamera(ndc(e),cam);const h=rc.intersectObject(ocean)[0];
+  if(h){const l=G.worldToLocal(h.point.clone());$('cur').textContent=dd(Math.asin(Math.max(-1,Math.min(1,l.y)))*180/Math.PI,'N','S')+'  '+dd(Math.atan2(l.x,l.z)*180/Math.PI,'E','W')}}
+});
+const up=e=>{ptrs.delete(e.pointerId);if(down&&ptrs.size==0&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<6&&performance.now()-down.t<500){const q=hit(e);q?pick(q):0;vel={x:0,y:0}}down=null};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId)});
+cv.addEventListener('wheel',e=>{e.preventDefault();zT=Math.max(1.6,Math.min(7,zT*(1+e.deltaY*.0012)))},{passive:false});
+function hit(e){let best=null,bd=20;const v=new THREE.Vector3(),n=new THREE.Vector3();
+ marks.forEach(k=>{v.copy(k.pos).applyMatrix4(G.matrixWorld);n.copy(v).sub(W.position);if(n.dot(cam.position.clone().sub(v))<=0)return;v.project(cam);const d=Math.hypot((v.x+1)/2*innerWidth-e.clientX,(1-v.y)/2*innerHeight-e.clientY);if(d<bd){bd=d;best=k.q}});return best}
+$('list').onclick=e=>{const b=e.target.closest('button');if(b)pick(view.find(q=>q.id===b.dataset.id))};
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;feed=b.dataset.f;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));closeCard();seeded=false;seen.clear();load()};
+$('mag').oninput=e=>{minMag=+e.target.value;$('mv').textContent=minMag;render()};
+addEventListener('keydown',e=>{if(e.key==='Escape')closeCard()});
+function size(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();zT=sel?(narrow()?2.8:1.7):base()}
+addEventListener('resize',size);size();G.rotation.set(.35,-1.2,0);
+
+// ---------- flat map ----------
+const MM={},QL0=null;let QL;
+var tiles=null,refL=null,FB=[],applyMap=null;
+let LM=null;try{LM=L.map('map',{zoomSnap:.25,zoomDelta:.5,minZoom:.5,maxBounds:[[-85,-180],[85,180]],maxBoundsViscosity:1,zoomControl:false})}catch(e){}
+if(LM){
+L.control.zoom({position:'bottomright'}).addTo(LM);LM.createPane('fb').style.zIndex=150;
+for(let g=-60;g<=60;g+=30)L.polyline([[g,-180],[g,180]],{pane:'fb',weight:.6,color:'#fff',opacity:.09,interactive:false}).addTo(LM);for(let g=-150;g<=150;g+=30)L.polyline([[-85,g],[85,g]],{pane:'fb',weight:.6,color:'#fff',opacity:.09,interactive:false}).addTo(LM);
+LAND.forEach(p=>{const a=[];for(let i=0;i<p.length;i+=2)a.push([p[i+1],p[i]]);FB.push(L.polygon(a,{pane:'fb',smoothFactor:1.2,weight:.8,color:'#2f5f8a',fillColor:'#16324d',fillOpacity:1,interactive:false}).addTo(LM))});
+QL=L.layerGroup().addTo(LM);
+const LL=L.layerGroup(),LLs=[];[['c',CN],['s',ST],['t',CT],['o',OC]].forEach(([k,a])=>a.forEach(([n,la,lo])=>{const m=L.marker([la,lo],{icon:L.divIcon({className:'lb '+k,iconSize:[0,0],html:'<span class="lbt">'+n+'</span>'}),interactive:false,keyboard:false});LLs.push({m,k,n});LL.addLayer(m)}));
+const dc=()=>{if(!LM.hasLayer(LL))return;const hi=LM.getZoom()>=3.5,r=[];LLs.forEach(l=>{const e=l.m.getElement();if(!e)return;let ok=hi?l.k!=='o':(l.k==='c'||l.k==='o');
+ if(ok){const p=LM.latLngToContainerPoint(l.m.getLatLng()),w=l.n.length*(l.k==='c'?8:6.4)+10,x1=p.x-w/2,y1=p.y-7;
+  if(p.x<0||p.y<0||p.x>innerWidth||p.y>innerHeight||r.some(q=>x1<q[2]&&x1+w>q[0]&&y1<q[3]&&y1+14>q[1]))ok=false;else r.push([x1,y1,x1+w,y1+14])}
+ e.style.visibility=ok?'visible':'hidden'})};
+const off=()=>{if($('sty').value==='sat'){FB.forEach(p=>p.setStyle({fillColor:'#4a6b3b',color:'#33502b'}));$('map').style.background='#0a2744'}};
+LM.on('moveend zoomend',dc);
+let te=0;
+applyMap=st=>{const y=SY[st];[tiles,refL].forEach(l=>l&&LM.removeLayer(l));let ok=0,bad=0;
+ const att=st==='sat'?'Imagery © Esri, Maxar, Earthstar Geographics':st==='color'?'Tiles © Esri, USGS, NOAA':'Tiles © Esri, HERE, Garmin, © OpenStreetMap contributors';
+ tiles=L.tileLayer(y.b,{maxZoom:18,maxNativeZoom:y.n,noWrap:true,attribution:att}).addTo(LM);
+ refL=y.r?L.tileLayer(y.r,{maxZoom:18,maxNativeZoom:Math.min(y.n,16),noWrap:true,zIndex:5}).addTo(LM):null;
+ tiles.on('tileload',()=>{ok++;if(LM.hasLayer(LL))LM.removeLayer(LL)});
+ tiles.on('tileerror',()=>{if(!ok&&++bad>=4){if(!LM.hasLayer(LL))LL.addTo(LM);dc();off();banner('The map pictures could not load (the chat preview blocks them, or the connection did), so this is a simplified offline map. Open the downloaded file in Chrome or Safari for full detail.')}});
+ $('map').style.background=y.bg;FB.forEach(p=>p.setStyle({fillColor:y.land,color:y.ln}))};
+const zs=()=>{$('map').dataset.z=LM.getZoom()<3.5?'lo':'hi';$('map').style.setProperty('--zs',Math.max(.6,Math.min(1.5,.6+(LM.getZoom()-2)*.15)))};LM.on('zoomend',zs);zs();
+var fit=()=>{if(mode!=='map')return;LM.invalidateSize();LM.setMinZoom(Math.max(.5,LM.getBoundsZoom([[-85,-180],[85,180]],true)))};
+fit();LM.setView([22,10],Math.max(2.4,LM.getMinZoom()));addEventListener('resize',fit);cv.style.display='none';$('lbl').style.display='none';
+LM.on('mousemove',e=>{$('cur').textContent=dd(e.latlng.lat,'N','S')+'  '+dd(e.latlng.lng,'E','W')});
+LM.on('click',e=>L.popup({closeButton:false}).setLatLng(e.latlng).setContent('<b>'+dd(e.latlng.lat,'N','S')+'<br>'+dd(e.latlng.lng,'E','W')+'</b>').openOn(LM));
+}
+function buildMap(){if(!LM)return;QL.clearLayers();for(const k in MM)delete MM[k];
+ view.forEach(q=>{const s=Math.round(8+Math.max(q.mag,0)*2.6),ic=L.divIcon({className:'',iconSize:[s,s],html:`<div class="qd${q.mag>=4.5?' p':''}${q.mag>=5.5?' pp':''}${sel&&sel.id===q.id?' s':''}" style="--c:${hx(q.mag)};width:${s}px;height:${s}px"></div>`});
+  const m=L.marker([q.lat,q.lon],{icon:ic,riseOnHover:true,zIndexOffset:Math.round(Math.max(q.mag,0)*100)}).bindTooltip('M'+q.mag.toFixed(1)+' · '+esc(q.place),{direction:'top',offset:[0,-s/2]}).on('click',()=>pick(q));MM[q.id]=m;QL.addLayer(m)})}
+function setMode(m){mode=m;$('map').style.display=m==='map'?'block':'none';$('lbl').style.display=m==='globe'?'block':'none';cv.style.display=m==='globe'?'block':'none';
+ document.querySelectorAll('#seg [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===m));
+ $('cur').textContent=m==='map'?'Drag to pan · scroll to zoom · click a dot':'Drag to spin · scroll to zoom · click a dot';
+ if(m==='map'){fit();if(sel)LM.setView([sel.lat,sel.lon],Math.max(LM.getZoom(),8))}
+ else{t0=performance.now();if(!RM){zoom=8;spin=.035}idle=0;if(sel)focus(sel)}}
+$('seg').onclick=e=>{const b=e.target.closest('button');if(b&&b.dataset.v)setMode(b.dataset.v)};
+$('fold').onclick=()=>{const f=document.body.classList.toggle('mfold');$('fold').setAttribute('aria-expanded',String(!f));$('fold').setAttribute('aria-label',f?'Show menu':'Hide menu')};
+if(!LM){mode='globe';$('map').style.display='none';cv.style.display='block';document.querySelectorAll('#seg [data-v]').forEach(b=>{b.classList.toggle('on',b.dataset.v==='globe');if(b.dataset.v==='map')b.hidden=true});$('cur').textContent='The flat-map library was blocked, so the globe is showing instead.'}
+
+// ---------- live shake ----------
+const seen=new Set(),waves=[];let seeded=false,toastT;
+const wob=(el,a,d)=>{if(!el||!el.animate||RM)return;const k=[],N=26;for(let i=0;i<=N;i++){const f=Math.pow(1-i/N,1.4)*a,r=()=>Math.random()*2-1;k.push({transform:`translate(${r()*f}px,${r()*f}px) rotate(${r()*f*.05}deg) scale(1.04)`})}k.push({transform:'none'});el.animate(k,{duration:d,easing:'linear'})};
+function quake(q,sim){
+ const m=Math.max(q.mag,0),a=Math.min(26,3+(m-2)*4.5),d=500+m*180;kick(m);
+ [$('map'),cv,$('lbl')].forEach(e=>wob(e,a,d));
+ const fx=$('fx');fx.style.setProperty('--fc',hx(m));if(!RM&&fx.animate)fx.animate([{opacity:0},{opacity:.55},{opacity:0}],{duration:d*1.1});
+ if(navigator.vibrate)navigator.vibrate(Array.from({length:Math.min(8,Math.round(m)||1)},()=>[60,40]).flat());
+ if(mode==='map'&&LM){const w=L.marker([q.lat,q.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:'<i class="wv"></i><i class="wv" style="animation-delay:.5s"></i><i class="wv" style="animation-delay:1s"></i>'}),interactive:false,zIndexOffset:2000}).addTo(LM);setTimeout(()=>w.remove(),3600)}
+ else[0,.5].forEach(o=>{const r=new THREE.Mesh(rG,new THREE.MeshBasicMaterial({color:new THREE.Color(hx(m)),transparent:true,side:2,depthWrite:false})),p=P(q.lat,q.lon,1.004);r.position.copy(p);r.quaternion.setFromUnitVectors(Z,p.clone().normalize());r.visible=false;MK.add(r);waves.push({r,t:performance.now()+o*1000})});
+ const t=$('toast');t.innerHTML=`<b style="background:${hx(m)}">${q.mag.toFixed(1)}</b><span>${sim?'Test quake · ':'New quake · '}${esc(q.place)}</span>`;t.classList.add('on');
+ t.onclick=()=>{t.classList.remove('on');const r=view.find(x=>x.id===q.id);r?pick(r):focus(q)};clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),9000)}
+function detect(){const thr=+$('shk').value;
+ if(seeded&&thr<50){const n=all.filter(q=>!seen.has(q.id)&&q.mag>=thr&&Date.now()-q.time<72e5).sort((a,b)=>b.mag-a.mag)[0];if(n)quake(n)}
+ all.forEach(q=>seen.add(q.id));seeded=true}
+function wavesStep(){const n=performance.now();for(let i=waves.length-1;i>=0;i--){const w=waves[i],p=(n-w.t)/2600;if(p<0)continue;w.r.visible=true;if(p>1){MK.remove(w.r);w.r.material.dispose();waves.splice(i,1);continue}w.r.scale.setScalar(.01+p*.28);w.r.material.opacity=(1-p)*.8}}
+$('sim').onclick=()=>{const d=DEMO[Math.floor(Math.random()*DEMO.length)],s={id:'sim',mag:4.8+Math.random()*2.2,lat:d[1],lon:d[2],place:d[4]};focus(s);setTimeout(()=>quake(s,true),mode==='map'?1300:1100)};
+
+// ---------- map style / satellite ----------
+const ES='https://server.arcgisonline.com/ArcGIS/rest/services/';
+const SY={
+ dark:{b:ES+'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',r:ES+'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',n:16,bg:'#0b1119',land:'#16324d',ln:'#2f5f8a',oc:0x08182b,dots:0x6fb3e6},
+ color:{b:ES+'World_Topo_Map/MapServer/tile/{z}/{y}/{x}',n:19,bg:'#a5cfe8',land:'#e8efdc',ln:'#9bb59a',oc:0x2f78b0,dots:0xd6efc4},
+ light:{b:ES+'Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',r:ES+'Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',n:16,bg:'#e4e9ec',land:'#f3f3ef',ln:'#b9c6ce',oc:0xcfe0ee,dots:0x4a7099},
+ sat:{b:ES+'World_Imagery/MapServer/tile/{z}/{y}/{x}',r:ES+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',n:17,bg:'#07121f',land:'#16324d',ln:'#2f5f8a',oc:0x08182b,dots:0x6fb3e6}};
+let bnOn=false;
+function banner(m){if(bnOn)return;bnOn=true;$('bnt').textContent=m;$('bn').classList.add('on')}
+$('bnx').onclick=()=>$('bn').classList.remove('on');
+function procEarth(){const W2=2048,H=1024,c=document.createElement('canvas');c.width=W2;c.height=H;const x=c.getContext('2d'),l=document.createElement('canvas');l.width=W2;l.height=H;const y=l.getContext('2d');
+ const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a3a66');g.addColorStop(.5,'#0c5a96');g.addColorStop(1,'#0a3a66');x.fillStyle=g;x.fillRect(0,0,W2,H);
+ const fill=(ctx)=>{LAND.forEach(p=>{ctx.beginPath();for(let i=0;i<p.length;i+=2){const X=(p[i]+180)/360*W2,Y=(90-p[i+1])/180*H;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)}ctx.closePath();ctx.fill()});ctx.fillRect(0,(90+72)/180*H,W2,H)};
+ x.shadowColor='#43c0e0';x.shadowBlur=22;x.fillStyle='#43c0e0';fill(x);x.shadowBlur=0;
+ y.fillStyle='#4a6b3b';fill(y);y.globalCompositeOperation='source-atop';
+ for(let i=0;i<7000;i++){const la=Math.random()*180-90,a=Math.abs(la),r=3+Math.random()*22;y.globalAlpha=.3;y.fillStyle=a>62?'#dfe8ec':a<12?'#2f6b35':a<34?(Math.random()<.55?'#a58b54':'#5f7f43'):'#4f7a42';y.beginPath();y.arc(Math.random()*W2,(90-la)/180*H,r,0,7);y.fill()}
+ x.drawImage(l,0,0);return new THREE.CanvasTexture(c)}
+let earthM=null,texTry=0;
+function earth(on){
+ if(!on){if(earthM)earthM.visible=false;landPts.visible=true;return}
+ if(earthM){earthM.visible=true;landPts.visible=false;return}
+ if(texTry)return;texTry=1;
+ const mk=t=>{earthM=new THREE.Mesh(new THREE.SphereGeometry(.998,72,72),new THREE.MeshBasicMaterial({map:t}));earthM.rotation.y=-Math.PI/2;G.add(earthM);earth($('sty').value==='sat')};
+ new THREE.TextureLoader().setCrossOrigin('anonymous').load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',mk,undefined,()=>{mk(procEarth());banner('The satellite photo of Earth needs internet access, so the globe shows a stylized Earth instead. Open the downloaded file in Chrome or Safari for the real photo.')})}
+function setStyle(st){if(!SY[st])st='dark';const y=SY[st];document.body.dataset.st=st;$('sty').value=st;
+ try{localStorage.setItem('tremor-style',st)}catch(e){}
+ if(applyMap)applyMap(st);ocean.material.color.set(y.oc);landPts.material.color.set(y.dots);earth(st==='sat')}
+$('sty').onchange=e=>setStyle(e.target.value);
+$('src2').onchange=()=>{seeded=false;seen.clear();closeCard();load()};
+{let st0='dark';try{st0=localStorage.getItem('tremor-style')||'dark'}catch(e){}setStyle(st0)}
+
+// ---------- clock + all time zones ----------
+const TZ=[['UTC','Etc/UTC'],['Baker Island','Etc/GMT+12'],['Pago Pago','Pacific/Pago_Pago'],['Honolulu','Pacific/Honolulu'],['Anchorage','America/Anchorage'],['Los Angeles','America/Los_Angeles'],['Denver','America/Denver'],['Chicago','America/Chicago'],['New York','America/New_York'],['La Paz','America/La_Paz'],['São Paulo','America/Sao_Paulo'],['South Georgia','Atlantic/South_Georgia'],['Azores','Atlantic/Azores'],['London','Europe/London'],['Paris','Europe/Paris'],['Cairo','Africa/Cairo'],['Moscow','Europe/Moscow'],['Tehran','Asia/Tehran'],['Dubai','Asia/Dubai'],['Kabul','Asia/Kabul'],['Karachi','Asia/Karachi'],['Delhi','Asia/Kolkata'],['Kathmandu','Asia/Kathmandu'],['Dhaka','Asia/Dhaka'],['Yangon','Asia/Yangon'],['Bangkok','Asia/Bangkok'],['Beijing','Asia/Shanghai'],['Tokyo','Asia/Tokyo'],['Adelaide','Australia/Adelaide'],['Sydney','Australia/Sydney'],['Nouméa','Pacific/Noumea'],['Auckland','Pacific/Auckland'],['Tonga','Pacific/Tongatapu'],['Kiritimati','Pacific/Kiritimati']];
+const pad=n=>String(n).padStart(2,'0'),ofs=m=>'UTC'+(m<0?'−':'+')+Math.floor(Math.abs(m)/60)+(Math.abs(m)%60?':'+pad(Math.abs(m)%60):'');
+function zinfo(f,d){const p={};f.formatToParts(d).forEach(x=>{p[x.type]=+x.value});const h=p.hour%24;return{h,m:p.minute,off:Math.round((Date.UTC(p.year,p.month-1,p.day,h,p.minute,p.second)-Math.floor(d.getTime()/1000)*1000)/6e4),key:p.year*1e4+p.month*100+p.day}}
+const d0=new Date(),ZR=TZ.map(z=>{try{const f=new Intl.DateTimeFormat('en-US',{timeZone:z[1],hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric'});return{n:z[0],id:z[1],f,off:zinfo(f,d0).off}}catch(e){return null}}).filter(Boolean).sort((a,b)=>a.off-b.off);
+const myTz=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){return ''}})();
+let meI=ZR.findIndex(z=>z.id===myTz);if(meI<0)meI=ZR.findIndex(z=>z.off===-d0.getTimezoneOffset());
+$('zl').innerHTML=ZR.map((z,i)=>`<li id="z${i}"${i===meI?' class="me"':''}><span class="dy"></span><span>${esc(z.n)}${i===meI?'<em>you</em>':''}<small></small></span><b>--:--</b></li>`).join('');
+$('zc2').textContent=ZR.length+' zones';
+const ZN=ZR.map((z,i)=>{const e=$('z'+i);return{e,dy:e.children[0],sm:e.querySelector('small'),b:e.querySelector('b')}});
+function zones(d){const lk=d.getFullYear()*1e4+(d.getMonth()+1)*100+d.getDate();
+ ZR.forEach((z,i)=>{const t=zinfo(z.f,d),n=ZN[i],tm=pad(t.h)+':'+pad(t.m),tag=ofs(t.off)+(t.key>lk?' · tomorrow':t.key<lk?' · yesterday':'');
+  if(n.b.textContent!==tm)n.b.textContent=tm;if(n.sm.textContent!==tag)n.sm.textContent=tag;n.dy.classList.toggle('n',t.h<6||t.h>=18)})}
+const tz0=myTz.replace(/_/g,' ');
+function tick(){const d=new Date(),t=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}),dt=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
+ $('ck').textContent=t;$('cd').textContent=dt;$('cu').textContent=d.toISOString().slice(11,19)+' UTC';$('ctz').textContent=tz0;$('bgt').textContent=t;$('bgd').textContent=dt;zones(d)}
+tick();setInterval(tick,1000);
+setTimeout(()=>{const e=ZN[meI]&&ZN[meI].e,l=$('zl');if(e)l.scrollTop=e.offsetTop-l.clientHeight/2+e.offsetHeight/2},800);
+$('rf').onclick=()=>{const h=document.body.classList.toggle('rhide');$('rf').setAttribute('aria-label',h?'Show clock and time zones':'Hide clock and time zones')};
+const zc=$('sz'),zx=zc.getContext('2d'),tr=Array(200).fill(0);let amp=0,zph=0;
+function kick(m){amp=Math.max(amp,Math.min(26,6+m*3.4))}
+function trace(){const w=zc.width,h=zc.height;zx.clearRect(0,0,w,h);zx.lineWidth=2;zx.lineJoin='round';zx.strokeStyle=zx.shadowColor=amp>3?'#ff7a45':'#7fd4ff';zx.shadowBlur=6;zx.beginPath();
+ tr.forEach((v,i)=>{const X=i/(tr.length-1)*w,Y=h/2+Math.max(-h/2+3,Math.min(h/2-3,v));i?zx.lineTo(X,Y):zx.moveTo(X,Y)});zx.stroke()}
+trace();
+if(!RM)setInterval(()=>{if(document.hidden)return;amp*=.965;zph+=1.1;tr.push((Math.random()-.5)*2.2+Math.sin(zph)*amp*(.6+Math.random()*.4));tr.shift();trace()},45);
+
+$('lk-gh').href=LINKS.github;$('lk-gl').href=LINKS.guns;
+// ---------- donate crypto popover ----------
+const dn=$('dn'),db=$('dbtn');let dpin=false,dtm;
+const IC=x=>'https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/'+x.toLowerCase()+'.svg',IC2=x=>'https://cdn.jsdelivr.net/gh/madenix/Crypto-logo-cdn@main/Logos/'+x+'.svg';
+const logo=(c,z)=>`<span class="lg" style="--c:${c.c};--t:${c.tc||'#fff'};width:${z}px;height:${z}px"><b>${esc(c.s)}</b><img src="${IC(c.s)}" alt="${esc(c.n)} logo" data-s="${esc(c.s)}" loading="lazy"></span>`;
+dn.addEventListener('error',e=>{const m=e.target;if(m.tagName!=='IMG')return;if(!m.dataset.f){m.dataset.f=1;m.src=IC2(m.dataset.s)}else m.remove()},true);
+function dnList(){dn.innerHTML='<h5>Donate me crypto!</h5><p class="sub">Thank you! Pick a coin to see the address.</p><div class="dg">'+DON.map((c,i)=>`<button data-i="${i}">${logo(c,36)}<span>${esc(c.n)}</span></button>`).join('')+'</div>'}
+function dnCoin(i){const c=DON[i];
+ dn.innerHTML=`<div class="dd"><button class="bk" id="dnb">← All coins</button><h5 class="hh">${logo(c,28)}${esc(c.n)} (${esc(c.s)})</h5><p class="sub">${esc(c.net)}</p><code class="ad" id="dna"></code><div class="acts"><button id="dnc">Copy address</button></div><div class="qr" id="dnq"></div><p class="wn">Only send ${esc(c.n)} on ${esc(c.net)}. Sending a different coin or network can lose the funds for good.</p></div>`;
+ $('dna').textContent=c.a;
+ const q=QRS[c.a];if(q)$('dnq').innerHTML=`<svg viewBox="0 0 ${q.n+8} ${q.n+8}" width="156" height="156" shape-rendering="crispEdges" role="img" aria-label="QR code for the ${esc(c.n)} address"><rect width="100%" height="100%" fill="#fff"/><path transform="translate(4 4)" d="${q.d}" fill="#000"/></svg>`;else $('dnq').remove();
+ $('dnb').onclick=dnList;
+ $('dnc').onclick=async e=>{const b=e.currentTarget,ok=await copyText(c.a);b.textContent=ok?'Copied ✓':'Copy blocked – select above';if(!ok){const r=document.createRange();r.selectNodeContents($('dna'));const g=getSelection();g.removeAllRanges();g.addRange(r)}setTimeout(()=>{b.textContent='Copy address'},2000)}}
+function dnShow(){clearTimeout(dtm);const r=db.getBoundingClientRect(),w=Math.min(320,innerWidth-16);dn.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';dn.style.bottom=(innerHeight-r.top+10)+'px';dn.classList.add('on')}
+function dnHide(force){if(force){dpin=false;clearTimeout(dtm);dn.classList.remove('on');setTimeout(dnList,220);return}if(!dpin)dtm=setTimeout(()=>dnHide(true),250)}
+db.addEventListener('mouseenter',dnShow);db.addEventListener('mouseleave',()=>dnHide());
+dn.addEventListener('mouseenter',()=>clearTimeout(dtm));dn.addEventListener('mouseleave',()=>dnHide());
+db.addEventListener('click',()=>{if(dpin&&dn.classList.contains('on'))dnHide(true);else{dpin=true;dnShow()}});
+dn.addEventListener('click',e=>{const b=e.target.closest('.dg button');if(b)dnCoin(+b.dataset.i)});
+document.addEventListener('pointerdown',e=>{if(dn.classList.contains('on')&&!dn.contains(e.target)&&!db.contains(e.target))dnHide(true)});
+addEventListener('keydown',e=>{if(e.key==='Escape')dnHide(true)});
+dnList();
+
+// ---------- loop ----------
+const ease=t=>{t=Math.min(1,Math.max(0,t));const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+let t0=performance.now(),sh=10;
+function frame(){
+ if(mode!=='globe'){requestAnimationFrame(frame);return}
+ const t=(performance.now()-t0)/1000;
+ zoom+=(zT-zoom)*.07;cam.position.set(0,0,zoom);
+ const u=2*zoom*Math.tan(20*Math.PI/180)/innerHeight;const bc=document.body.classList;sh+=(((bc.contains('mfold')?0:178)-(bc.contains('rhide')?0:168))-sh)*.1;W.position.set(narrow()?0:sh*u,narrow()?.17*innerHeight*u:0,0);
+ if(fly){G.rotation.y+=wrap(tgt.y-G.rotation.y)*.07;G.rotation.x+=(tgt.x-G.rotation.x)*.07;if(Math.abs(wrap(tgt.y-G.rotation.y))<.002)fly=false}
+ else if(!down){G.rotation.y+=vel.x;G.rotation.x=Math.max(-1.3,Math.min(1.3,G.rotation.x+vel.y));vel.x*=.94;vel.y*=.94;idle++;
+  if(!sel&&idle>120)G.rotation.y+=spin;spin+=(.0012-spin)*.012}
+ marks.forEach((k,i)=>{const p=RM?1:ease((t-k.d)/.7),big=sel&&sel.id===k.q.id;k.m.scale.setScalar(Math.max(.0001,k.s*p*(big?1.6:1)));
+  if(k.r){const f=RM?.4:(t*.45+k.ph)%1;k.r.scale.setScalar(k.s*(2+7*f)*p);k.r.material.opacity=(1-f)*.65*p}});
+ if(selRing.visible){const f=(t*.8)%1;selRing.scale.setScalar(.02+.05*f);selRing.material.opacity=1-f}
+ labels();wavesStep();R.render(S,cam);requestAnimationFrame(frame)}
+frame();load();setInterval(()=>{if(!document.hidden)load()},6e4);
+</script></body></html>
