@@ -1,4 +1,5 @@
 # 🌎 Aftershock
+<img width="1920" height="961" alt="image" src="https://github.com/user-attachments/assets/c6d8a17e-ae6d-40e3-9620-4a8b2fe6b2c0" />
 
 **An interactive earthquake tracking dashboard with live seismic data, a world map, and a 3D globe.**
 
