@@ -1,6 +1,8 @@
 # 🌎 Aftershock
 <img width="1920" height="961" alt="image" src="https://github.com/user-attachments/assets/c6d8a17e-ae6d-40e3-9620-4a8b2fe6b2c0" />
 
+https://ibrahxms.github.io/Aftershock/
+
 **An interactive earthquake tracking dashboard with live seismic data, a world map, and a 3D globe.**
 
 Aftershock is a web-based earthquake monitoring dashboard that lets users explore recent seismic activity around the world. It combines live earthquake information from public data sources with an interactive map, a 3D globe, activity statistics, and customizable shake alerts.
