@@ -27,15 +27,6 @@ Aftershock is a web-based earthquake monitoring dashboard that lets users explor
 - Leaflet
 - Public USGS and EMSC earthquake data
 
-## 🚀 Getting Started
-
-No complicated installation is required.
-
-1. Clone or download this repository.
-2. Open the project folder.
-3. Open `aftershock.html` in your web browser.
-4. Explore earthquake activity around the world.
-
 ## 📡 Data Sources
 
 Aftershock uses publicly available earthquake information from:
